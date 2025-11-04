@@ -1,0 +1,169 @@
+import { ethers } from "hardhat";
+import * as fs from "fs";
+import * as path from "path";
+import halaCoinsConfig from "../config/halaCoins.json";
+import deployedContractsConfig from "../config/deployedContracts.json";
+import { HalaCoinsConfig, DeployedContracts, HalaCoin } from "../config/types";
+
+/**
+ * Event Listener for ShariaCompliance Contract
+ * 
+ * Continuously listens to CoinRegistered, CoinRemoved, and CoinUpdated events
+ * and automatically syncs JSON config when events occur.
+ * 
+ * Usage: npx hardhat run scripts/listen-coin-events.ts --network moonbase
+ * 
+ * This script runs continuously. Press Ctrl+C to stop.
+ */
+async function main() {
+  const contractsConfig = deployedContractsConfig as DeployedContracts;
+
+  console.log("👂 Starting event listener for ShariaCompliance...\n");
+
+  // Check if contract is deployed
+  const shariaComplianceAddress = contractsConfig.main.shariaCompliance;
+  if (!shariaComplianceAddress) {
+    console.error("❌ Error: ShariaCompliance contract not found in deployedContracts.json!");
+    console.log("\n📝 Please deploy contracts first:");
+    console.log("   npx hardhat run scripts/deploy-contracts.ts --network moonbase\n");
+    process.exit(1);
+  }
+
+  console.log("📖 Listening to contract:", shariaComplianceAddress);
+  console.log("🔄 Waiting for events... (Press Ctrl+C to stop)\n");
+
+  // Connect to contract
+  const shariaCompliance = await ethers.getContractAt("ShariaCompliance", shariaComplianceAddress);
+
+  // Get current block for event filtering
+  const currentBlock = await ethers.provider.getBlockNumber();
+  console.log(`📦 Starting from block: ${currentBlock}\n`);
+
+  // Function to sync JSON after event
+  const syncJSON = async () => {
+    console.log("🔄 Syncing JSON from contract...");
+    
+    try {
+      // Import and run sync script logic
+      const config = halaCoinsConfig as HalaCoinsConfig;
+      const contractCoins = await shariaCompliance.getAllShariaCoins();
+      
+      const contractCoinsMap = new Map<string, any>();
+      for (const coin of contractCoins) {
+        contractCoinsMap.set(coin.id, coin);
+      }
+
+      const jsonCoinsMap = new Map<string, HalaCoin>();
+      for (const coin of config.coins) {
+        jsonCoinsMap.set(coin.symbol, coin);
+      }
+
+      const contractSymbols = new Set<string>();
+      const updatedCoins: HalaCoin[] = [];
+
+      // Update existing coins
+      for (const jsonCoin of config.coins) {
+        const contractCoin = contractCoinsMap.get(jsonCoin.symbol);
+        
+        if (contractCoin) {
+          contractSymbols.add(jsonCoin.symbol);
+          updatedCoins.push({
+            ...jsonCoin,
+            permissible: contractCoin.verified,
+            complianceReason: contractCoin.complianceReason,
+          });
+        } else {
+          updatedCoins.push({
+            ...jsonCoin,
+            permissible: false,
+          });
+        }
+      }
+
+      // Add new coins from contract
+      for (const contractCoin of contractCoins) {
+        if (!jsonCoinsMap.has(contractCoin.id)) {
+          const newCoin: HalaCoin = {
+            symbol: contractCoin.id,
+            name: contractCoin.name,
+            decimals: 18,
+            complianceReason: contractCoin.complianceReason,
+            description: `Auto-synced from contract`,
+            permissible: contractCoin.verified,
+            addresses: {
+              moonbase: null,
+            },
+          };
+          updatedCoins.push(newCoin);
+        }
+      }
+
+      const updatedConfig: HalaCoinsConfig = {
+        ...config,
+        coins: updatedCoins,
+        metadata: {
+          ...config.metadata,
+          lastUpdated: new Date().toISOString(),
+        },
+      };
+
+      const configPath = path.join(__dirname, "..", "config", "halaCoins.json");
+      fs.writeFileSync(configPath, JSON.stringify(updatedConfig, null, 2) + "\n");
+      
+      console.log("✅ JSON config updated successfully!\n");
+    } catch (error: any) {
+      console.error("❌ Error syncing JSON:", error.message);
+    }
+  };
+
+  // Listen to CoinRegistered event
+  shariaCompliance.on("CoinRegistered", async (coinId, name, symbol, complianceReason) => {
+    console.log("🔔 CoinRegistered event detected!");
+    console.log(`   Coin: ${symbol} (${name})`);
+    console.log(`   ID: ${coinId}`);
+    console.log();
+    await syncJSON();
+  });
+
+  // Listen to CoinRemoved event
+  shariaCompliance.on("CoinRemoved", async (coinId) => {
+    console.log("🔔 CoinRemoved event detected!");
+    console.log(`   Coin ID: ${coinId}`);
+    console.log();
+    await syncJSON();
+  });
+
+  // Listen to CoinUpdated event
+  shariaCompliance.on("CoinUpdated", async (coinId, verified, complianceReason) => {
+    console.log("🔔 CoinUpdated event detected!");
+    console.log(`   Coin ID: ${coinId}`);
+    console.log(`   Verified: ${verified}`);
+    console.log();
+    await syncJSON();
+  });
+
+  // Handle errors
+  shariaCompliance.on("error", (error) => {
+    console.error("❌ Event listener error:", error);
+  });
+
+  // Keep process alive
+  process.on("SIGINT", () => {
+    console.log("\n\n🛑 Stopping event listener...");
+    process.exit(0);
+  });
+
+  // Initial sync
+  await syncJSON();
+}
+
+main()
+  .then(() => {
+    // Keep process running
+    return new Promise(() => {});
+  })
+  .catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });
+

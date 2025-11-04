@@ -21,16 +21,18 @@ describe("ShariaCompliance", function () {
       expect(await shariaCompliance.owner()).to.equal(owner.address);
     });
 
-    it("Should initialize with default coins", async function () {
-      expect(await shariaCompliance.isShariaCompliant("BTC")).to.be.true;
-      expect(await shariaCompliance.isShariaCompliant("ETH")).to.be.true;
-      expect(await shariaCompliance.isShariaCompliant("USDT")).to.be.true;
-      expect(await shariaCompliance.isShariaCompliant("USDC")).to.be.true;
+    it("Should start with no coins registered (coins registered programmatically from config)", async function () {
+      const totalCoins = await shariaCompliance.getTotalCoins();
+      expect(totalCoins).to.equal(0); // No coins initialized by default
+      
+      // Coins should not be compliant until registered
+      expect(await shariaCompliance.isShariaCompliant("BTC")).to.be.false;
+      expect(await shariaCompliance.isShariaCompliant("ETH")).to.be.false;
     });
 
     it("Should return total coins", async function () {
       const totalCoins = await shariaCompliance.getTotalCoins();
-      expect(totalCoins).to.equal(4); // BTC, ETH, USDT, USDC
+      expect(totalCoins).to.equal(0); // No default coins
     });
   });
 

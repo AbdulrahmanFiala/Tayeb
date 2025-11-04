@@ -1,6 +1,8 @@
-# Quick Setup Guide
+# Tayeb Setup Guide - Moonbase Alpha Testnet
 
 ## 🚀 Get Started in 5 Minutes
+
+Deploy the Sharia-compliant DeFi platform on Moonbase Alpha testnet with custom AMM.
 
 ### 1. Install Dependencies
 
@@ -68,13 +70,45 @@ You should see:
 npm run deploy:testnet
 ```
 
-This will deploy all 4 contracts to Moonbase Alpha:
+This will deploy to Moonbase Alpha:
+
+**Core Contracts:**
 - ShariaCompliance
 - ShariaSwap
-- ShariaETF
 - ShariaDCA
 
-**Save the contract addresses!** You'll need them for frontend integration.
+**Custom AMM (Automatic):**
+- SimpleFactory (creates pairs)
+- SimpleRouter (routes swaps)
+- SimplePair contracts (liquidity pools)
+- MockERC20 tokens (USDT, USDC, DAI)
+
+The deployment script automatically:
+1. Deploys the custom AMM infrastructure
+2. Creates token pairs (WETH/USDT, WETH/USDC, WETH/DAI)
+3. Mints mock tokens to deployer
+4. Registers tokens in all contracts
+
+**Save the contract addresses!** You'll need them for liquidity and frontend integration.
+
+### 7. Add Liquidity (Required)
+
+After deployment, add liquidity to enable swaps:
+
+1. Copy addresses from deployment output
+2. Edit `scripts/addLiquidity.ts` and update:
+   - `ROUTER_ADDRESS` (SimpleRouter)
+   - `USDT_ADDRESS` (MockUSDT)
+   - `USDC_ADDRESS` (MockUSDC)
+   - `DAI_ADDRESS` (MockDAI)
+
+3. Run the liquidity script:
+
+```bash
+npx hardhat run scripts/addLiquidity.ts --network moonbase
+```
+
+This will add liquidity to all pairs, enabling token swaps.
 
 ## 📋 Post-Deployment Steps
 
@@ -87,32 +121,29 @@ import { ethers } from "hardhat";
 async function main() {
   const SHARIA_COMPLIANCE = "0x..."; // Your deployed address
   const SHARIA_SWAP = "0x...";       // Your deployed address
-  const SHARIA_ETF = "0x...";        // Your deployed address
   const SHARIA_DCA = "0x...";        // Your deployed address
 
   // Example token addresses on Moonbase Alpha
-  const WGLMR = "0xD909178CC99d318e4D46e7E66a972955859670E1";
+  const WETH = "0xD909178CC99d318e4D46e7E66a972955859670E1"; // WETH (Wrapped DEV)
   
   // Get contracts
   const shariaCompliance = await ethers.getContractAt("ShariaCompliance", SHARIA_COMPLIANCE);
   const shariaSwap = await ethers.getContractAt("ShariaSwap", SHARIA_SWAP);
-  const shariaETF = await ethers.getContractAt("ShariaETF", SHARIA_ETF);
   const shariaDCA = await ethers.getContractAt("ShariaDCA", SHARIA_DCA);
 
-  // Register WGLMR as Sharia-compliant
-  console.log("Registering GLMR as Sharia-compliant...");
+  // Register WETH (wrapped DEV) as Sharia-compliant
+  console.log("Registering DEV as Sharia-compliant...");
   await shariaCompliance.registerShariaCoin(
-    "GLMR",
-    "Glimmer",
-    "GLMR",
-    "Native token of Moonbeam"
+    "DEV",
+    "DEV",
+    "DEV",
+    "Native token of Moonbase Alpha (testnet)"
   );
 
   // Register token addresses
   console.log("Registering token addresses...");
-  await shariaSwap.registerAsset(WGLMR, "GLMR");
-  await shariaETF.registerTokenAddress("GLMR", WGLMR);
-  await shariaDCA.registerTokenAddress("GLMR", WGLMR);
+  await shariaSwap.registerAsset(WETH, "DEV");
+  await shariaDCA.registerTokenAddress("DEV", WETH);
 
   console.log("✅ Setup complete!");
 }

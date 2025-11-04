@@ -27,8 +27,8 @@ contract ShariaDCA is Ownable, ReentrancyGuard, AutomationCompatibleInterface {
     /// @notice DEX router
     IDEXRouter public dexRouter;
 
-    /// @notice WGLMR address
-    address public immutable WGLMR;
+    /// @notice WETH address (Wrapped DEV)
+    address public immutable WETH;
 
     /// @notice DCA order counter
     uint256 public nextOrderId = 1;
@@ -120,11 +120,11 @@ contract ShariaDCA is Ownable, ReentrancyGuard, AutomationCompatibleInterface {
     constructor(
         address _shariaCompliance,
         address _dexRouter,
-        address _wglmr
+        address _weth
     ) Ownable(msg.sender) {
         shariaCompliance = ShariaCompliance(_shariaCompliance);
         dexRouter = IDEXRouter(_dexRouter);
-        WGLMR = _wglmr;
+        WETH = _weth;
     }
 
     // ============================================================================
@@ -404,16 +404,16 @@ contract ShariaDCA is Ownable, ReentrancyGuard, AutomationCompatibleInterface {
         uint256 deadline,
         address recipient
     ) private returns (uint256 amountOut) {
-        // Wrap GLMR
-        (bool success, ) = WGLMR.call{value: amountIn}("");
+        // Wrap DEV to WETH
+        (bool success, ) = WETH.call{value: amountIn}("");
         if (!success) revert SwapFailed();
 
         // Approve router
-        IERC20(WGLMR).forceApprove(address(dexRouter), amountIn);
+        IERC20(WETH).forceApprove(address(dexRouter), amountIn);
 
         // Build path
         address[] memory path = new address[](2);
-        path[0] = WGLMR;
+        path[0] = WETH;
         path[1] = tokenOut;
 
         // Execute swap

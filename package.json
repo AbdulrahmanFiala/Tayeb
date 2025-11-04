@@ -7,14 +7,17 @@
     "compile": "hardhat compile",
     "test": "hardhat test",
     "deploy": "hardhat run scripts/deploy.ts",
-    "deploy:testnet": "hardhat run scripts/deploy.ts --network moonbase"
+    "deploy:testnet": "hardhat run scripts/deploy.ts --network moonbase",
+    "deploy:amm": "hardhat run scripts/deploy-amm.ts --network moonbase",
+    "deploy:contracts": "hardhat run scripts/deploy-contracts.ts --network moonbase",
+    "sync:coins": "hardhat run scripts/sync-coins-from-contract.ts --network moonbase",
+    "listen:events": "hardhat run scripts/listen-coin-events.ts --network moonbase"
   },
   "keywords": [
     "sharia",
     "defi",
     "moonbeam",
     "solidity",
-    "etf",
     "dca"
   ],
   "author": "",

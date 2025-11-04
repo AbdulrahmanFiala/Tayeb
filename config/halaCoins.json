@@ -1,0 +1,189 @@
+{
+  "coins": [
+    {
+      "symbol": "BTC",
+      "name": "Bitcoin",
+      "decimals": 8,
+      "complianceReason": "Decentralized cryptocurrency, no interest-bearing mechanism",
+      "description": "Leading decentralized cryptocurrency",
+      "addresses": {
+        "moonbase": null
+      },
+      "permissible": true
+    },
+    {
+      "symbol": "ETH",
+      "name": "Ethereum",
+      "decimals": 18,
+      "complianceReason": "Smart contract platform, utility token",
+      "description": "Decentralized smart contract platform",
+      "addresses": {
+        "moonbase": null
+      },
+      "permissible": true
+    },
+    {
+      "symbol": "USDT",
+      "name": "Tether USD",
+      "decimals": 6,
+      "complianceReason": "Stablecoin backed by fiat reserves",
+      "description": "USD-pegged stablecoin",
+      "addresses": {
+        "moonbase": null
+      },
+      "permissible": true
+    },
+    {
+      "symbol": "XRP",
+      "name": "Ripple",
+      "decimals": 6,
+      "complianceReason": "Digital payment protocol token",
+      "description": "Fast and low-cost cross-border payments",
+      "addresses": {
+        "moonbase": null
+      },
+      "permissible": true
+    },
+    {
+      "symbol": "BNB",
+      "name": "Binance Coin",
+      "decimals": 18,
+      "complianceReason": "Utility token for Binance ecosystem",
+      "description": "Native token of Binance exchange and BNB Chain",
+      "addresses": {
+        "moonbase": null
+      },
+      "permissible": true
+    },
+    {
+      "symbol": "SOL",
+      "name": "Solana",
+      "decimals": 9,
+      "complianceReason": "High-performance blockchain utility token",
+      "description": "High-speed blockchain platform",
+      "addresses": {
+        "moonbase": null
+      },
+      "permissible": true
+    },
+    {
+      "symbol": "USDC",
+      "name": "USD Coin",
+      "decimals": 6,
+      "complianceReason": "Fully reserved stablecoin",
+      "description": "Fully-backed USD stablecoin",
+      "addresses": {
+        "moonbase": null
+      },
+      "permissible": true
+    },
+    {
+      "symbol": "TRX",
+      "name": "TRON",
+      "decimals": 18,
+      "complianceReason": "Decentralized content platform token",
+      "description": "Decentralized entertainment and content-sharing platform",
+      "addresses": {
+        "moonbase": null
+      },
+      "permissible": true
+    },
+    {
+      "symbol": "ADA",
+      "name": "Cardano",
+      "decimals": 6,
+      "complianceReason": "Proof-of-stake blockchain platform token",
+      "description": "Research-driven blockchain platform",
+      "addresses": {
+        "moonbase": null
+      },
+      "permissible": true
+    },
+    {
+      "symbol": "LINK",
+      "name": "Chainlink",
+      "decimals": 18,
+      "complianceReason": "Oracle network utility token",
+      "description": "Decentralized oracle network",
+      "addresses": {
+        "moonbase": null
+      },
+      "permissible": true
+    },
+    {
+      "symbol": "BCH",
+      "name": "Bitcoin Cash",
+      "decimals": 8,
+      "complianceReason": "Peer-to-peer electronic cash, no interest-bearing",
+      "description": "Bitcoin fork focused on fast, low-cost payments",
+      "addresses": {
+        "moonbase": null
+      },
+      "permissible": true
+    },
+    {
+      "symbol": "LEO",
+      "name": "UNUS SED LEO",
+      "decimals": 18,
+      "complianceReason": "Utility token for iFinex ecosystem",
+      "description": "Utility token for Bitfinex and iFinex services",
+      "addresses": {
+        "moonbase": null
+      },
+      "permissible": true
+    },
+    {
+      "symbol": "XLM",
+      "name": "Stellar",
+      "decimals": 7,
+      "complianceReason": "Cross-border payment network token",
+      "description": "Open network for cross-border payments",
+      "addresses": {
+        "moonbase": null
+      },
+      "permissible": true
+    },
+    {
+      "symbol": "SUI",
+      "name": "Sui",
+      "decimals": 9,
+      "complianceReason": "Layer 1 blockchain utility token",
+      "description": "Next-generation smart contract platform",
+      "addresses": {
+        "moonbase": null
+      },
+      "permissible": true
+    },
+    {
+      "symbol": "HBAR",
+      "name": "Hedera",
+      "decimals": 8,
+      "complianceReason": "Public distributed ledger utility token",
+      "description": "Enterprise-grade distributed ledger",
+      "addresses": {
+        "moonbase": null
+      },
+      "permissible": true
+    },
+    {
+      "symbol": "AVAX",
+      "name": "Avalanche",
+      "decimals": 18,
+      "complianceReason": "Proof-of-stake blockchain platform token",
+      "description": "Highly scalable smart contract platform",
+      "addresses": {
+        "moonbase": null
+      },
+      "permissible": true
+    }
+  ],
+  "stablecoins": [
+    "USDT",
+    "USDC"
+  ],
+  "metadata": {
+    "version": "1.0.0",
+    "lastUpdated": null,
+    "network": "moonbase"
+  }
+}

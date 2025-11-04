@@ -1,0 +1,21 @@
+{
+  "network": "moonbase",
+  "version": "1.0.0",
+  "lastDeployed": null,
+  "amm": {
+    "factory": null,
+    "router": null,
+    "weth": null
+  },
+  "main": {
+    "shariaCompliance": null,
+    "shariaSwap": null,
+    "shariaDCA": null
+  },
+  "metadata": {
+    "deploymentDate": null,
+    "deployer": null,
+    "blockNumber": null
+  }
+}
+

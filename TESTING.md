@@ -9,7 +9,7 @@ cd contract
 cargo test
 ```
 
-Expected output: **4 tests passed** ✅
+Expected output: **2 tests passed** ✅
 
 ### 2. Run Specific Tests
 
@@ -19,12 +19,6 @@ cargo test test_register_sharia_coin
 
 # Test DCA orders
 cargo test test_create_dca_order
-
-# Test ETF creation
-cargo test test_create_etf
-
-# Test template ETFs
-cargo test test_get_template_etfs
 ```
 
 ### 3. Run Tests with Output
@@ -37,8 +31,6 @@ cargo test -- --nocapture
 
 1. **test_register_sharia_coin** - Tests registering a Sharia-compliant coin
 2. **test_create_dca_order** - Tests creating a DCA order
-3. **test_create_etf** - Tests creating a custom ETF
-4. **test_get_template_etfs** - Tests retrieving template ETFs
 
 ## Check Compilation
 
@@ -80,5 +72,5 @@ This generates:
 ## Current Status
 
 ✅ Contract compiles successfully
-✅ All 4 unit tests pass
+✅ All unit tests pass
 ✅ Ready for deployment testing

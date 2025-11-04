@@ -10,8 +10,8 @@ import "./interfaces/IDEXRouter.sol";
 
 /**
  * @title ShariaSwap
- * @notice Sharia-compliant token swapping with DEX integration
- * @dev Integrates with StellaSwap/BeamSwap on Moonbeam
+ * @notice Sharia-compliant token swapping with custom AMM
+ * @dev Uses SimpleRouter (Uniswap V2-style) on Moonbase Alpha testnet
  */
 contract ShariaSwap is Ownable, ReentrancyGuard {
     using SafeERC20 for IERC20;
@@ -23,11 +23,11 @@ contract ShariaSwap is Ownable, ReentrancyGuard {
     /// @notice Reference to Sharia compliance contract
     ShariaCompliance public immutable shariaCompliance;
 
-    /// @notice DEX router for swaps (StellaSwap/BeamSwap)
+    /// @notice DEX router for swaps (SimpleRouter)
     IDEXRouter public dexRouter;
 
-    /// @notice WGLMR (Wrapped GLMR) address on Moonbeam
-    address public immutable WGLMR;
+    /// @notice WETH (Wrapped DEV) address on Moonbase Alpha
+    address public immutable WETH;
 
     /// @notice Mapping of asset addresses to their symbols
     mapping(address => string) public assetSymbols;
@@ -90,17 +90,17 @@ contract ShariaSwap is Ownable, ReentrancyGuard {
     /**
      * @notice Initialize the ShariaSwap contract
      * @param _shariaCompliance Address of ShariaCompliance contract
-     * @param _dexRouter Address of DEX router (StellaSwap/BeamSwap)
-     * @param _wglmr Address of WGLMR token
+     * @param _dexRouter Address of DEX router (SimpleRouter)
+     * @param _weth Address of WETH token (Wrapped DEV)
      */
     constructor(
         address _shariaCompliance,
         address _dexRouter,
-        address _wglmr
+        address _weth
     ) Ownable(msg.sender) {
         shariaCompliance = ShariaCompliance(_shariaCompliance);
         dexRouter = IDEXRouter(_dexRouter);
-        WGLMR = _wglmr;
+        WETH = _weth;
     }
 
     // ============================================================================
@@ -213,7 +213,7 @@ contract ShariaSwap is Ownable, ReentrancyGuard {
     }
 
     /**
-     * @notice Swap native GLMR for Sharia-compliant tokens
+     * @notice Swap native DEV for Sharia-compliant tokens
      * @param tokenOut Output token address
      * @param minAmountOut Minimum output amount
      * @param deadline Transaction deadline
@@ -232,16 +232,16 @@ contract ShariaSwap is Ownable, ReentrancyGuard {
         
         shariaCompliance.requireShariaCompliant(tokenOutSymbol);
 
-        // Wrap GLMR
-        (bool success, ) = WGLMR.call{value: msg.value}("");
+        // Wrap DEV to WETH
+        (bool success, ) = WETH.call{value: msg.value}("");
         if (!success) revert SwapFailed();
 
         // Approve router
-        IERC20(WGLMR).forceApprove(address(dexRouter), msg.value);
+        IERC20(WETH).forceApprove(address(dexRouter), msg.value);
 
         // Build swap path
         address[] memory path = new address[](2);
-        path[0] = WGLMR;
+        path[0] = WETH;
         path[1] = tokenOut;
 
         // Execute swap
@@ -263,17 +263,17 @@ contract ShariaSwap is Ownable, ReentrancyGuard {
         // Record swap
         _recordSwap(
             msg.sender,
-            WGLMR,
+            WETH,
             tokenOut,
             msg.value,
             amountOut,
-            "GLMR",
+            "DEV",
             tokenOutSymbol
         );
 
         emit SwapExecuted(
             msg.sender,
-            WGLMR,
+            WETH,
             tokenOut,
             msg.value,
             amountOut,
@@ -366,7 +366,7 @@ contract ShariaSwap is Ownable, ReentrancyGuard {
     }
 
     /**
-     * @notice Receive function for WGLMR wrapping
+     * @notice Receive function for WETH wrapping
      */
     receive() external payable {}
 }

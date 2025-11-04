@@ -218,37 +218,12 @@ contract ShariaCompliance is Ownable {
 
     /**
      * @notice Initialize default Sharia-compliant coins
+     * @dev Coins are registered programmatically from config during deployment
+     * This function is kept empty - all coins are registered via registerShariaCoin() in deployment script
      */
     function _initializeDefaultCoins() private {
-        // Note: These are examples - in production, proper Sharia board approval needed
-        
-        _registerCoin(
-            "BTC",
-            "Bitcoin",
-            "BTC",
-            "Decentralized, no interest-bearing mechanism"
-        );
-        
-        _registerCoin(
-            "ETH",
-            "Ethereum",
-            "ETH",
-            "Smart contract platform, utility token"
-        );
-        
-        _registerCoin(
-            "USDT",
-            "Tether USD",
-            "USDT",
-            "Stablecoin backed by fiat reserves"
-        );
-        
-        _registerCoin(
-            "USDC",
-            "USD Coin",
-            "USDC",
-            "Fully reserved stablecoin"
-        );
+        // All Initial Hala Coins are registered programmatically from config
+        // See scripts/deploy-contracts.ts for registration logic
     }
 
     /**

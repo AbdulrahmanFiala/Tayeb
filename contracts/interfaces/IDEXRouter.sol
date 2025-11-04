@@ -3,7 +3,7 @@ pragma solidity ^0.8.20;
 
 /**
  * @title IDEXRouter
- * @notice Interface for Uniswap V2 compatible DEX routers (StellaSwap, BeamSwap)
+ * @notice Interface for Uniswap V2 compatible DEX routers 
  */
 interface IDEXRouter {
     function swapExactTokensForTokens(

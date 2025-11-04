@@ -1,6 +1,6 @@
-# Tayeb - Sharia Compliant DeFi Platform on Moonbeam
+# Tayeb - Sharia Compliant DeFi Platform
 
-A comprehensive decentralized platform for Sharia-compliant cryptocurrency investment, built with Solidity smart contracts and deployed on Moonbeam.
+A comprehensive decentralized platform for Sharia-compliant cryptocurrency investment, built with Solidity smart contracts for Moonbase Alpha (Moonbeam Testnet).
 
 ## 🌟 Features
 
@@ -10,19 +10,13 @@ A comprehensive decentralized platform for Sharia-compliant cryptocurrency inves
 - **Transparent Documentation**: Each token includes compliance reasoning
 
 ### 2. Token Swapping (ShariaSwap)
-- **DEX Integration**: Connects with StellaSwap and BeamSwap on Moonbeam
+- **Custom AMM**: Built-in Uniswap V2-style AMM for testing
 - **Compliance Enforcement**: Only allows swaps into Sharia-compliant tokens
 - **Swap History**: Track all user swap activities
 - **Price Quotes**: Get swap estimates before execution
 - **Slippage Protection**: Minimum output amount guarantees
 
-### 3. ETF Portfolio Building (ShariaETF)
-- **Custom ETFs**: Create personalized portfolios with allocation percentages
-- **Template ETFs**: Pre-configured Sharia-compliant portfolios
-- **Batch Swaps**: Invest in multiple tokens simultaneously
-- **Portfolio Tracking**: Monitor ETF performance and user investments
-
-### 4. Dollar Cost Averaging (ShariaDCA)
+### 3. Dollar Cost Averaging (ShariaDCA)
 - **Automated DCA**: Schedule periodic investments into Sharia-compliant tokens
 - **Chainlink Automation**: Trustless execution via Chainlink Keepers
 - **Flexible Intervals**: Set custom time intervals (1 hour to 30 days)
@@ -43,18 +37,18 @@ A comprehensive decentralized platform for Sharia-compliant cryptocurrency inves
 │  - Validation        │              │    - Swap Logic     │
 └──────────────────────┘              └─────────────────────┘
             ▲                                     │
-            │                         ┌───────────▼──────────┐
-┌───────────┴──────────┐              │     ShariaETF       │
-│     ShariaDCA        │              │    - Portfolio      │
-│  - Chainlink Auto    │              │    - Batch Swaps    │
-│  - Scheduled Orders  │              └─────────────────────┘
-└──────────────────────┘                          │
+            │                                     │
+┌───────────┴──────────┐                         │
+│     ShariaDCA        │                         │
+│  - Chainlink Auto    │                         │
+│  - Scheduled Orders  │                         │
+└──────────────────────┘                         │
             │                                     │
             └─────────────┬───────────────────────┘
                           │
               ┌───────────▼──────────────┐
-              │  StellaSwap / BeamSwap   │
-              │    (DEX on Moonbeam)     │
+              │      Custom AMM          │
+              │  (Uniswap V2 Style)      │
               └──────────────────────────┘
 ```
 
@@ -79,18 +73,6 @@ Token swapping with DEX integration and compliance validation.
 - `getSwapQuote(tokenIn, tokenOut, amountIn)` - Get price estimate
 - `getUserSwapHistory(user)` - View swap history
 - `registerAsset(tokenAddress, symbol)` - Admin: Register token address
-
-### ShariaETF.sol
-Create and invest in Sharia-compliant ETF portfolios.
-
-**Key Functions:**
-- `createETF(name, description, symbols, percentages)` - Create custom ETF
-- `createTemplateETF(...)` - Admin: Create template ETF
-- `investInETF(etfId, minAmountsOut, deadline)` - Invest with GLMR
-- `investInETFWithToken(etfId, inputToken, inputAmount, ...)` - Invest with ERC20
-- `getETF(etfId, isTemplate)` - Get ETF details
-- `getUserETFs(user)` - Get user's ETF subscriptions
-- `registerTokenAddress(symbol, address)` - Admin: Register token
 
 ### ShariaDCA.sol
 Automated Dollar Cost Averaging with Chainlink integration.
@@ -128,14 +110,39 @@ cp .env.example .env
 # Compile, test, and deploy
 npm run compile
 npm test
-npm run deploy:testnet
+npm run deploy:testnet  # Deploys with custom AMM on testnet
 ```
+
+### Moonbase Alpha Testnet
+
+This platform is designed for **Moonbase Alpha (testnet)** only:
+
+- ✅ Custom Uniswap V2-style AMM (SimpleRouter, SimplePair, SimpleFactory)
+- ✅ Mock ERC20 tokens (USDT, USDC, DAI) for testing
+- ✅ Manual liquidity provision via `scripts/addLiquidity.ts`
+- ✅ Free testnet DEV tokens for testing
+- ✅ No real funds required
 
 For detailed setup instructions, troubleshooting, and post-deployment steps, refer to [SETUP.md](./SETUP.md).
 
 ## 💻 Usage
 
 > **Note**: For post-deployment setup scripts and token registration, see [SETUP.md](./SETUP.md)
+
+### Add Liquidity (Required)
+
+After deployment, add liquidity to enable swaps:
+
+```bash
+# Edit scripts/addLiquidity.ts with deployed addresses
+npm run compile
+npx hardhat run scripts/addLiquidity.ts --network moonbase
+```
+
+This will:
+1. Mint WETH (wrapped DEV) and mock tokens
+2. Approve tokens for the router
+3. Add liquidity to WETH/USDT, WETH/USDC, and WETH/DAI pairs
 
 ### Post-Deployment Setup
 
@@ -153,7 +160,6 @@ const wallet = new ethers.Wallet(process.env.PRIVATE_KEY!, provider);
 
 // Initialize contracts
 const shariaSwap = new ethers.Contract(SHARIA_SWAP_ADDRESS, ShariaSwapABI.abi, wallet);
-const shariaETF = new ethers.Contract(SHARIA_ETF_ADDRESS, ShariaETFABI.abi, wallet);
 const shariaDCA = new ethers.Contract(SHARIA_DCA_ADDRESS, ShariaDCAABI.abi, wallet);
 
 // Register token addresses (find actual addresses on Moonbase Alpha)
@@ -162,9 +168,6 @@ const USDC_ADDRESS = "0x...";
 
 await shariaSwap.registerAsset(USDT_ADDRESS, "USDT");
 await shariaSwap.registerAsset(USDC_ADDRESS, "USDC");
-
-await shariaETF.registerTokenAddress("USDT", USDT_ADDRESS);
-await shariaETF.registerTokenAddress("USDC", USDC_ADDRESS);
 
 await shariaDCA.registerTokenAddress("USDT", USDT_ADDRESS);
 await shariaDCA.registerTokenAddress("USDC", USDC_ADDRESS);
@@ -187,53 +190,6 @@ const tx = await shariaSwap.swapGLMRForToken(
 
 await tx.wait();
 console.log("Swap completed!");
-```
-
-### Creating an ETF
-
-```typescript
-// Create a balanced Sharia ETF
-const etfName = "Balanced Sharia Portfolio";
-const description = "50% USDT, 50% USDC";
-const symbols = ["USDT", "USDC"];
-const percentages = [50, 50]; // Must sum to 100
-
-const tx = await shariaETF.createETF(
-  etfName,
-  description,
-  symbols,
-  percentages
-);
-
-const receipt = await tx.wait();
-
-// Get ETF ID from event
-const event = receipt.logs.find(log => log.topics[0] === ethers.id("ETFCreated(uint256,string,address,bool)"));
-const etfId = ethers.AbiCoder.defaultAbiCoder().decode(["uint256"], event.topics[1])[0];
-
-console.log("ETF created with ID:", etfId);
-```
-
-### Investing in an ETF
-
-```typescript
-// Invest 10 GLMR in the ETF
-const investAmount = ethers.parseEther("10");
-const minAmountsOut = [
-  ethers.parseUnits("25", 6),  // Min 25 USDT
-  ethers.parseUnits("25", 6)   // Min 25 USDC
-];
-const deadline = Math.floor(Date.now() / 1000) + 60 * 15;
-
-const tx = await shariaETF.investInETF(
-  etfId,
-  minAmountsOut,
-  deadline,
-  { value: investAmount }
-);
-
-await tx.wait();
-console.log("Investment complete!");
 ```
 
 ### Creating a DCA Order
@@ -303,8 +259,7 @@ await tx.wait();
 
 ### Key Addresses (Moonbase Alpha)
 
-- **WGLMR**: `0xD909178CC99d318e4D46e7E66a972955859670E1`
-- **StellaSwap Router**: `0x8Ac868293D97761A1fED6d4A01E9FF17C5594Aa3`
+- **WETH (Wrapped DEV)**: `0xD909178CC99d318e4D46e7E66a972955859670E1`
 
 ## 🔐 Security
 
@@ -319,8 +274,7 @@ await tx.wait();
 - **Setup Guide**: See [SETUP.md](./SETUP.md) for quick start and troubleshooting
 - **Migration Guide**: See [MIGRATION_GUIDE.md](./MIGRATION_GUIDE.md) for Ink! → Solidity details
 - **Moonbeam Docs**: https://docs.moonbeam.network/
-- **StellaSwap**: https://stellaswap.com/
-- **BeamSwap**: https://beamswap.io/
+- **Moonbase Faucet**: https://faucet.moonbeam.network/
 - **Chainlink Automation**: https://automation.chain.link/
 - **Hardhat**: https://hardhat.org/
 
@@ -333,7 +287,6 @@ Tayeb/
 ├── contracts/           # Solidity smart contracts
 │   ├── ShariaCompliance.sol
 │   ├── ShariaSwap.sol
-│   ├── ShariaETF.sol
 │   ├── ShariaDCA.sol
 │   └── interfaces/
 │       └── IDEXRouter.sol
