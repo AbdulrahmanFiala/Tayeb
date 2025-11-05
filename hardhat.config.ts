@@ -19,11 +19,13 @@ const config: HardhatUserConfig = {
   networks: {
     // Moonbase Alpha Testnet
     moonbase: {
-      url: "https://rpc.api.moonbase.moonbeam.network",
+      url: process.env.MOONBASE_RPC_URL,
       chainId: 1287,
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
       gas: 5000000,
       gasPrice: 1000000000, // 1 Gwei
+      timeout: 300000, // 5 minutes
+      httpHeaders: {},
     },
     // Moonbeam Mainnet
     moonbeam: {
@@ -43,10 +45,7 @@ const config: HardhatUserConfig = {
     artifacts: "./artifacts",
   },
   etherscan: {
-    apiKey: {
-      moonbaseAlpha: process.env.ETHERSCAN_API_KEY || "",
-      moonbeam: process.env.ETHERSCAN_API_KEY || "",
-    },
+    apiKey: process.env.ETHERSCAN_API_KEY || "", 
     customChains: [
       {
         network: "moonbaseAlpha",
@@ -65,6 +64,9 @@ const config: HardhatUserConfig = {
         },
       },
     ],
+  },
+  sourcify: {
+    enabled: true, 
   },
 };
 

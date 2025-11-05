@@ -34,8 +34,8 @@ async function main() {
 
   if (!ROUTER_ADDRESS || !USDT_ADDRESS || !USDC_ADDRESS) {
     console.error("❌ Error: AMM addresses not found in config files!");
-    console.log("\n📝 Please run deploy-amm.ts first:");
-    console.log("   npx hardhat run scripts/deploy-amm.ts --network moonbase\n");
+    console.log("\n📝 Please run deploy-amm-core.ts first:");
+    console.log("   npx hardhat run scripts/deploy-amm-core.ts --network moonbase\n");
     process.exit(1);
   }
 

@@ -72,7 +72,6 @@ export interface DeployedMain {
 export interface DeploymentMetadata {
   deploymentDate: string | null;
   deployer: string | null;
-  blockNumber: number | null;
 }
 
 export interface DeployedContracts {
@@ -81,6 +80,8 @@ export interface DeployedContracts {
   lastDeployed: string | null;
   amm: DeployedAMM;
   main: DeployedMain;
+  tokens: { [key: string]: string | null }; // Token addresses by symbol: e.g., "BTC": "0x..."
+  pairs: { [key: string]: string | null }; // Dedicated pairs section: e.g., "BTC_USDT": "0x..."
   metadata: DeploymentMetadata;
 }
 

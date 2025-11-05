@@ -14,12 +14,13 @@ contract ShariaCompliance is Ownable {
     // ============================================================================
 
     struct ShariaCoin {
-        string id;              // Token address or identifier
-        string name;            // Token name
-        string symbol;          // Token symbol
-        bool verified;          // Verification status
-        string complianceReason; // Reason for compliance status
-        bool exists;            // Check if struct exists
+        string id;              // Symbol (e.g., "BTC", "ETH")
+        string name;
+        string symbol;
+        address tokenAddress;   // ← ADD: Token contract address
+        bool verified;
+        string complianceReason;
+        bool exists;
     }
 
     // ============================================================================
@@ -34,6 +35,10 @@ contract ShariaCompliance is Ownable {
     
     /// @notice Mapping to track coin ID existence in array
     mapping(string => bool) private coinIdExists;
+
+    // Add reverse lookup mappings
+    mapping(address => string) public addressToSymbol;  // Address → Symbol
+    mapping(string => address) public symbolToAddress;  // Symbol → Address
 
     // ============================================================================
     // EVENTS
@@ -86,16 +91,33 @@ contract ShariaCompliance is Ownable {
         string memory coinId,
         string memory name,
         string memory symbol,
+        address tokenAddress,  // ← ADD parameter
         string memory complianceReason
     ) external onlyOwner {
         if (shariaCoins[coinId].exists) {
             revert CoinAlreadyExists(coinId);
+        }
+        
+        if (tokenAddress != address(0)) {
+            // Prevent duplicate addresses
+            string memory existingSymbol = addressToSymbol[tokenAddress];
+            if (bytes(existingSymbol).length > 0) {
+                revert("Address already registered");
+            }
+            // Prevent duplicate symbols
+            address existingAddress = symbolToAddress[symbol];
+            if (existingAddress != address(0)) {
+                revert("Symbol already registered");
+            }
+            addressToSymbol[tokenAddress] = symbol;
+            symbolToAddress[symbol] = tokenAddress;
         }
 
         shariaCoins[coinId] = ShariaCoin({
             id: coinId,
             name: name,
             symbol: symbol,
+            tokenAddress: tokenAddress,  // ← Store address
             verified: true,
             complianceReason: complianceReason,
             exists: true
@@ -116,6 +138,13 @@ contract ShariaCompliance is Ownable {
     function removeShariaCoin(string memory coinId) external onlyOwner {
         if (!shariaCoins[coinId].exists) {
             revert CoinNotFound(coinId);
+        }
+
+        // Clean up reverse mappings
+        address tokenAddress = shariaCoins[coinId].tokenAddress;
+        if (tokenAddress != address(0)) {
+            delete addressToSymbol[tokenAddress];
+            delete symbolToAddress[coinId]; // coinId is the symbol
         }
 
         delete shariaCoins[coinId];
@@ -212,6 +241,30 @@ contract ShariaCompliance is Ownable {
         }
     }
 
+    // Add helper functions
+    function getCoinByAddress(address tokenAddress) external view returns (ShariaCoin memory) {
+        string memory symbol = addressToSymbol[tokenAddress];
+        if (bytes(symbol).length == 0) {
+            revert CoinNotFound("");
+        }
+        return shariaCoins[symbol];
+    }
+
+    function getCoinBySymbol(string memory symbol) external view returns (ShariaCoin memory) {
+        if (!shariaCoins[symbol].exists) {
+            revert CoinNotFound(symbol);
+        }
+        return shariaCoins[symbol];
+    }
+
+    function getTokenAddress(string memory symbol) external view returns (address) {
+        return symbolToAddress[symbol];
+    }
+
+    function getSymbolByAddress(address tokenAddress) external view returns (string memory) {
+        return addressToSymbol[tokenAddress];
+    }
+
     // ============================================================================
     // INTERNAL FUNCTIONS
     // ============================================================================
@@ -223,29 +276,48 @@ contract ShariaCompliance is Ownable {
      */
     function _initializeDefaultCoins() private {
         // All Initial Hala Coins are registered programmatically from config
-        // See scripts/deploy-contracts.ts for registration logic
+        // See scripts/deploy-core.ts for registration logic
     }
 
     /**
      * @notice Internal function to register a coin during initialization
+     * @dev This function is deprecated - use registerShariaCoin() instead
+     * Kept for potential future use with default initialization
      */
     function _registerCoin(
         string memory coinId,
         string memory name,
         string memory symbol,
+        address tokenAddress,
         string memory complianceReason
     ) private {
+        if (tokenAddress != address(0)) {
+            string memory existingSymbol = addressToSymbol[tokenAddress];
+            if (bytes(existingSymbol).length > 0) {
+                return; // Skip if address already registered
+            }
+            address existingAddress = symbolToAddress[symbol];
+            if (existingAddress != address(0)) {
+                return; // Skip if symbol already registered
+            }
+            addressToSymbol[tokenAddress] = symbol;
+            symbolToAddress[symbol] = tokenAddress;
+        }
+
         shariaCoins[coinId] = ShariaCoin({
             id: coinId,
             name: name,
             symbol: symbol,
+            tokenAddress: tokenAddress,
             verified: true,
             complianceReason: complianceReason,
             exists: true
         });
 
-        coinIds.push(coinId);
-        coinIdExists[coinId] = true;
+        if (!coinIdExists[coinId]) {
+            coinIds.push(coinId);
+            coinIdExists[coinId] = true;
+        }
     }
 }
 

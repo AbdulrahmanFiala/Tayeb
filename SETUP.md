@@ -81,119 +81,54 @@ This will deploy to Moonbase Alpha:
 - SimpleFactory (creates pairs)
 - SimpleRouter (routes swaps)
 - SimplePair contracts (liquidity pools)
-- MockERC20 tokens (USDT, USDC, DAI)
+- MockERC20 tokens for all 16 Initial Hala Coins (BTC, ETH, USDT, USDC, etc.)
 
 The deployment script automatically:
 1. Deploys the custom AMM infrastructure
-2. Creates token pairs (WETH/USDT, WETH/USDC, WETH/DAI)
-3. Mints mock tokens to deployer
-4. Registers tokens in all contracts
+2. Deploys all Initial Hala Coin tokens
+3. Creates token pairs (each coin with USDT and USDC = 28 pairs total)
+4. Mints mock tokens to deployer
+5. Registers all coins from `config/halaCoins.json` in ShariaCompliance
+6. Registers token addresses in ShariaSwap and ShariaDCA
+7. **Saves all addresses to JSON config files** (frontend-ready)
 
-**Save the contract addresses!** You'll need them for liquidity and frontend integration.
+**All addresses are saved automatically!** Check `config/deployedContracts.json` and `config/halaCoins.json`.
 
 ### 7. Add Liquidity (Required)
 
 After deployment, add liquidity to enable swaps:
 
-1. Copy addresses from deployment output
-2. Edit `scripts/addLiquidity.ts` and update:
-   - `ROUTER_ADDRESS` (SimpleRouter)
-   - `USDT_ADDRESS` (MockUSDT)
-   - `USDC_ADDRESS` (MockUSDC)
-   - `DAI_ADDRESS` (MockDAI)
-
-3. Run the liquidity script:
-
 ```bash
 npx hardhat run scripts/addLiquidity.ts --network moonbase
 ```
 
-This will add liquidity to all pairs, enabling token swaps.
+This will:
+- Read addresses from JSON configs automatically (no manual editing!)
+- Add liquidity to all pairs (each Initial Hala Coin with USDT and USDC)
+- Enable token swaps across all pairs
 
-## 📋 Post-Deployment Steps
+## 📋 Post-Deployment
 
-After deployment, you need to register token addresses. Here's an example script:
+✅ **All addresses are automatically saved!** Check `config/deployedContracts.json` and `config/halaCoins.json`.
 
-```typescript
-// setup.ts
-import { ethers } from "hardhat";
-
-async function main() {
-  const SHARIA_COMPLIANCE = "0x..."; // Your deployed address
-  const SHARIA_SWAP = "0x...";       // Your deployed address
-  const SHARIA_DCA = "0x...";        // Your deployed address
-
-  // Example token addresses on Moonbase Alpha
-  const WETH = "0xD909178CC99d318e4D46e7E66a972955859670E1"; // WETH (Wrapped DEV)
-  
-  // Get contracts
-  const shariaCompliance = await ethers.getContractAt("ShariaCompliance", SHARIA_COMPLIANCE);
-  const shariaSwap = await ethers.getContractAt("ShariaSwap", SHARIA_SWAP);
-  const shariaDCA = await ethers.getContractAt("ShariaDCA", SHARIA_DCA);
-
-  // Register WETH (wrapped DEV) as Sharia-compliant
-  console.log("Registering DEV as Sharia-compliant...");
-  await shariaCompliance.registerShariaCoin(
-    "DEV",
-    "DEV",
-    "DEV",
-    "Native token of Moonbase Alpha (testnet)"
-  );
-
-  // Register token addresses
-  console.log("Registering token addresses...");
-  await shariaSwap.registerAsset(WETH, "DEV");
-  await shariaDCA.registerTokenAddress("DEV", WETH);
-
-  console.log("✅ Setup complete!");
-}
-
-main().catch(console.error);
-```
-
-Run it:
-```bash
-npx hardhat run setup.ts --network moonbase
-```
+For detailed information on:
+- **Accessing deployed addresses**: See [USAGE_EXAMPLES.md](./USAGE_EXAMPLES.md)
+- **Coin management**: See [DEPLOYMENT_WORKFLOW.md](./DEPLOYMENT_WORKFLOW.md#coin-management-contract-driven) or [config/README.md](./config/README.md)
+- **Frontend integration**: See [USAGE_EXAMPLES.md](./USAGE_EXAMPLES.md)
 
 ## 🔍 Verify Contracts (Optional)
 
-> **Note**: Moonbeam uses Etherscan API V2 for contract verification. Get your API key from [etherscan.io/mapidashboard](https://etherscan.io/apidashboard) and add it to your `.env` file as `ETHERSCAN_API_KEY`.
-
-Verify your contracts on Moonscan:
+Verify all contracts on Moonscan:
 
 ```bash
 # Make sure ETHERSCAN_API_KEY is set in your .env file
-npx hardhat verify --network moonbase <CONTRACT_ADDRESS>
+npm run verify:all
 ```
 
-For contracts with constructor arguments:
-```bash
-npx hardhat verify --network moonbase <CONTRACT_ADDRESS> \
-  "0x..." "0x..." "0x..."
-```
+> **Note**: Get your API key from [etherscan.io/mapidashboard](https://etherscan.io/apidashboard) and add it to `.env` as `ETHERSCAN_API_KEY`.
 
-**Important**: Moonbeam networks now use Etherscan API V2. The verification process is the same, but you need an Etherscan API key instead of the deprecated Moonscan API key.
+For detailed verification information and troubleshooting, see [DEPLOYMENT_WORKFLOW.md](./DEPLOYMENT_WORKFLOW.md#verification).
 
-## 📱 Frontend Integration
-
-For comprehensive frontend integration examples with detailed code samples, see [README.md](./README.md#-usage).
-
-Quick example:
-```typescript
-import { ethers } from "ethers";
-import ShariaComplianceABI from "./artifacts/contracts/ShariaCompliance.sol/ShariaCompliance.json";
-
-const provider = new ethers.BrowserProvider(window.ethereum);
-const signer = await provider.getSigner();
-const shariaCompliance = new ethers.Contract(
-  "0x...", // Your deployed address
-  ShariaComplianceABI.abi,
-  signer
-);
-
-const coins = await shariaCompliance.getAllShariaCoins();
-```
 
 ## 🛠️ Development Workflow
 
@@ -208,72 +143,23 @@ npm test
 npm run deploy:testnet
 
 # Deploy to mainnet (when ready)
-npx hardhat run scripts/deploy.ts --network moonbeam
+npm run deploy:testnet --network moonbeam
 
 # Start local node (for testing)
 npx hardhat node
 
 # Deploy to local node
-npx hardhat run scripts/deploy.ts --network localhost
+npm run deploy --network localhost
 ```
+
+## 📚 Next Steps
+
+- **Usage Examples**: See [USAGE_EXAMPLES.md](./USAGE_EXAMPLES.md) for code examples and integration guides
+- **Deployment Details**: See [DEPLOYMENT_WORKFLOW.md](./DEPLOYMENT_WORKFLOW.md) for deployment architecture and advanced topics
+- **Configuration**: See [config/README.md](./config/README.md) for config file details
+- **Full Documentation**: See [README.md](./README.md) for comprehensive platform overview
 
 ## 📚 Resources
 
-- **Full Documentation**: See [README.md](./README.md) for comprehensive docs, features, and usage examples
-- **Migration Guide**: See [MIGRATION_GUIDE.md](./MIGRATION_GUIDE.md) for Ink! → Solidity details
 - **Moonbeam Docs**: https://docs.moonbeam.network/
 - **Hardhat Docs**: https://hardhat.org/docs
-
-## 🆘 Common Issues
-
-### "Insufficient funds"
-**Solution**: Get testnet tokens from https://faucet.moonbeam.network/
-
-### "Network not found"
-**Solution**: Make sure MetaMask is connected to Moonbase Alpha:
-- Network Name: Moonbase Alpha
-- RPC URL: https://rpc.api.moonbase.moonbeam.network
-- Chain ID: 1287
-- Currency: DEV
-
-### "Nonce too high"
-**Solution**: Reset your MetaMask account:
-1. Settings → Advanced
-2. Clear activity tab data
-
-### Compilation errors
-**Solution**: 
-```bash
-rm -rf cache/ artifacts/
-npm run compile
-```
-
-## ✅ Checklist
-
-- [ ] Dependencies installed (`npm install`)
-- [ ] `.env` configured with private key
-- [ ] Testnet tokens received
-- [ ] Contracts compiled successfully
-- [ ] Tests passing
-- [ ] Deployed to testnet
-- [ ] Contract addresses saved
-- [ ] Token addresses registered
-- [ ] Contracts verified (optional)
-- [ ] Frontend connected (optional)
-
-## 🎉 You're Ready!
-
-Once you complete these steps, your Sharia-compliant DeFi platform is live on Moonbeam!
-
-**Next Steps:**
-- Review [README.md](./README.md) for detailed usage examples and features
-- Build your frontend or integrate with existing dApps
-- Deploy to Moonbeam mainnet when ready
-
----
-
-**Need help?** 
-- Check [README.md](./README.md) for comprehensive documentation
-- See [MIGRATION_GUIDE.md](./MIGRATION_GUIDE.md) for technical details
-- Open an issue on GitHub
-

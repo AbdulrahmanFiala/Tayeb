@@ -29,9 +29,6 @@ contract ShariaSwap is Ownable, ReentrancyGuard {
     /// @notice WETH (Wrapped DEV) address on Moonbase Alpha
     address public immutable WETH;
 
-    /// @notice Mapping of asset addresses to their symbols
-    mapping(address => string) public assetSymbols;
-
     /// @notice Swap history per user
     mapping(address => SwapRecord[]) public userSwapHistory;
 
@@ -117,19 +114,6 @@ contract ShariaSwap is Ownable, ReentrancyGuard {
         emit DexRouterUpdated(oldRouter, _newRouter);
     }
 
-    /**
-     * @notice Register asset with its symbol for tracking
-     * @param tokenAddress Token contract address
-     * @param symbol Token symbol
-     */
-    function registerAsset(
-        address tokenAddress,
-        string memory symbol
-    ) external onlyOwner {
-        assetSymbols[tokenAddress] = symbol;
-        emit AssetRegistered(tokenAddress, symbol);
-    }
-
     // ============================================================================
     // SWAP FUNCTIONS
     // ============================================================================
@@ -152,8 +136,8 @@ contract ShariaSwap is Ownable, ReentrancyGuard {
     ) external nonReentrant returns (uint256 amountOut) {
         if (amountIn == 0) revert InvalidAmount();
 
-        // Validate Sharia compliance
-        string memory tokenOutSymbol = assetSymbols[tokenOut];
+        // Get symbol from ShariaCompliance (instead of assetSymbols mapping)
+        string memory tokenOutSymbol = shariaCompliance.getSymbolByAddress(tokenOut);
         if (bytes(tokenOutSymbol).length == 0) revert AssetNotRegistered();
         
         shariaCompliance.requireShariaCompliant(tokenOutSymbol);
@@ -196,7 +180,7 @@ contract ShariaSwap is Ownable, ReentrancyGuard {
             tokenOut,
             amountIn,
             amountOut,
-            assetSymbols[tokenIn],
+            shariaCompliance.getSymbolByAddress(tokenIn),  // Get from contract
             tokenOutSymbol
         );
 
@@ -226,8 +210,8 @@ contract ShariaSwap is Ownable, ReentrancyGuard {
     ) external payable nonReentrant returns (uint256 amountOut) {
         if (msg.value == 0) revert InvalidAmount();
 
-        // Validate Sharia compliance
-        string memory tokenOutSymbol = assetSymbols[tokenOut];
+        // Get symbol from ShariaCompliance
+        string memory tokenOutSymbol = shariaCompliance.getSymbolByAddress(tokenOut);
         if (bytes(tokenOutSymbol).length == 0) revert AssetNotRegistered();
         
         shariaCompliance.requireShariaCompliant(tokenOutSymbol);

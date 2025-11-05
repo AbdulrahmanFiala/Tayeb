@@ -5,6 +5,7 @@ import * as path from "path";
 import halaCoinsConfig from "../config/halaCoins.json";
 import deployedContractsConfig from "../config/deployedContracts.json";
 import { HalaCoinsConfig, DeployedContracts } from "../config/types";
+import { deployOrVerifyContract } from "./utils/deployHelpers";
 
 /**
  * Deploy Main Contracts to Moonbase Alpha Testnet
@@ -36,8 +37,8 @@ async function main() {
 
   if (!DEX_ROUTER) {
     console.error("❌ Error: AMM addresses not found in deployedContracts.json!");
-    console.log("\n📝 Please run deploy-amm.ts first:");
-    console.log("   npx hardhat run scripts/deploy-amm.ts --network moonbase\n");
+    console.log("\n📝 Please run deploy-amm-core.ts first:");
+    console.log("   npx hardhat run scripts/deploy-amm-core.ts --network moonbase\n");
     process.exit(1);
   }
 
@@ -47,56 +48,63 @@ async function main() {
   console.log();
 
   // ============================================================================
-  // Deploy ShariaCompliance
+  // Deploy ShariaCompliance (Idempotent)
   // ============================================================================
   console.log("📝 Deploying ShariaCompliance...");
-  const ShariaCompliance = await ethers.getContractFactory("ShariaCompliance");
-  const shariaCompliance = await ShariaCompliance.deploy();
-  await shariaCompliance.waitForDeployment();
-  const shariaComplianceAddress = await shariaCompliance.getAddress();
-  console.log("✅ ShariaCompliance deployed to:", shariaComplianceAddress);
+  const shariaComplianceAddress = await deployOrVerifyContract(
+    "ShariaCompliance",
+    contractsConfig.main.shariaCompliance,
+    async () => {
+      const ShariaCompliance = await ethers.getContractFactory("ShariaCompliance");
+      return await ShariaCompliance.deploy();
+    }
+  );
+  const shariaCompliance = await ethers.getContractAt("ShariaCompliance", shariaComplianceAddress);
   console.log();
 
   // ============================================================================
-  // Deploy ShariaSwap
+  // Deploy ShariaSwap (Idempotent)
   // ============================================================================
   console.log("💱 Deploying ShariaSwap...");
-  const ShariaSwap = await ethers.getContractFactory("ShariaSwap");
-  const shariaSwap = await ShariaSwap.deploy(
-    shariaComplianceAddress,
-    DEX_ROUTER,
-    WETH_ADDRESS
+  const shariaSwapAddress = await deployOrVerifyContract(
+    "ShariaSwap",
+    contractsConfig.main.shariaSwap,
+    async () => {
+      const ShariaSwap = await ethers.getContractFactory("ShariaSwap");
+      return await ShariaSwap.deploy(
+        shariaComplianceAddress,
+        DEX_ROUTER,
+        WETH_ADDRESS
+      );
+    }
   );
-  await shariaSwap.waitForDeployment();
-  const shariaSwapAddress = await shariaSwap.getAddress();
-  console.log("✅ ShariaSwap deployed to:", shariaSwapAddress);
+  const shariaSwap = await ethers.getContractAt("ShariaSwap", shariaSwapAddress);
   console.log();
 
   // ============================================================================
-  // Deploy ShariaDCA
+  // Deploy ShariaDCA (Idempotent)
   // ============================================================================
   console.log("📅 Deploying ShariaDCA...");
-  const ShariaDCA = await ethers.getContractFactory("ShariaDCA");
-  const shariaDCA = await ShariaDCA.deploy(
-    shariaComplianceAddress,
-    DEX_ROUTER,
-    WETH_ADDRESS
+  const shariaDCAAddress = await deployOrVerifyContract(
+    "ShariaDCA",
+    contractsConfig.main.shariaDCA,
+    async () => {
+      const ShariaDCA = await ethers.getContractFactory("ShariaDCA");
+      return await ShariaDCA.deploy(
+        shariaComplianceAddress,
+        DEX_ROUTER,
+        WETH_ADDRESS
+      );
+    }
   );
-  await shariaDCA.waitForDeployment();
-  const shariaDCAAddress = await shariaDCA.getAddress();
-  console.log("✅ ShariaDCA deployed to:", shariaDCAAddress);
+  const shariaDCA = await ethers.getContractAt("ShariaDCA", shariaDCAAddress);
   console.log();
-
-  // Note: Addresses are saved to JSON configs, not .env
-  // .env is only for private keys and API keys
 
   // ============================================================================
   // Update deployedContracts.json with main contract addresses
   // ============================================================================
   console.log("📝 Updating deployedContracts.json with main contract addresses...");
   const contractsPath = path.join(__dirname, "..", "config", "deployedContracts.json");
-  const contractsConfig = deployedContractsConfig as DeployedContracts;
-  const blockNumber = await ethers.provider.getBlockNumber();
 
   const updatedContracts = {
     ...contractsConfig,
@@ -112,7 +120,6 @@ async function main() {
       ...contractsConfig.metadata,
       deploymentDate: new Date().toISOString(),
       deployer: deployer.address,
-      blockNumber: blockNumber,
     },
   };
 
@@ -142,59 +149,48 @@ async function main() {
   let skippedCount = 0;
   
   for (const coin of config.coins) {
+    // Update coin registration to include address
+    const tokenAddress = coin.addresses.moonbase;
+    
+    if (!tokenAddress) {
+        console.warn(`⚠️  Warning: ${coin.symbol} address not found, registering without address...`);
+    }
+    
     // Skip if already registered
     if (registeredSymbols.has(coin.symbol)) {
-      console.log(`⏭️  ${coin.symbol} already registered, skipping...`);
-      skippedCount++;
-      continue;
+        console.log(`⏭️  ${coin.symbol} already registered, skipping...`);
+        skippedCount++;
+        continue;
     }
     
     try {
-      await shariaCompliance.registerShariaCoin(
-        coin.symbol,
-        coin.name,
-        coin.symbol,
-        coin.complianceReason
-      );
-      console.log(`✅ Registered ${coin.symbol} (${coin.name}) in ShariaCompliance`);
-      registeredCount++;
+        const tx = await shariaCompliance.registerShariaCoin(
+            coin.symbol,
+            coin.name,
+            coin.symbol,
+            tokenAddress,
+            coin.complianceReason
+        );
+        await tx.wait();
+        console.log(`✅ Registered ${coin.symbol} (${coin.name}) in ShariaCompliance`);
+        registeredCount++;
     } catch (error: any) {
-      console.warn(`⚠️  Failed to register ${coin.symbol} in ShariaCompliance:`, error.message);
+        if (error.message?.includes("CoinAlreadyExists") || error.reason?.includes("CoinAlreadyExists")) {
+            console.log(`⏭️  ${coin.symbol} already exists in ShariaCompliance, skipping...`);
+            skippedCount++;
+        } else {
+            console.warn(`⚠️  Failed to register ${coin.symbol} in ShariaCompliance:`, error.message);
+        }
     }
   }
   
   console.log(`\n📊 Registration summary: ${registeredCount} new, ${skippedCount} already registered`);
   console.log();
 
-  // ============================================================================
-  // Register token addresses in ShariaSwap and ShariaDCA
-  // ============================================================================
-  console.log("📝 Registering token addresses in ShariaSwap and ShariaDCA...");
-  
-  // Register wrapped DEV token (not in config)
-  await shariaSwap.registerAsset(WETH_ADDRESS, "DEV");
-  console.log(`✅ Registered DEV (wrapped native) in ShariaSwap`);
-
-  await shariaDCA.registerTokenAddress("DEV", WETH_ADDRESS);
-  console.log(`✅ Registered DEV in ShariaDCA`);
-  console.log();
-
-  // Register all Hala Coins from config
-  for (const coin of config.coins) {
-    const tokenAddress = coin.addresses.moonbase;
-    if (!tokenAddress) {
-      console.warn(`⚠️  Warning: ${coin.symbol} address not found in config, skipping token address registration...`);
-      continue;
-    }
-
-    // Register in ShariaSwap
-    await shariaSwap.registerAsset(tokenAddress, coin.symbol);
-    
-    // Register in ShariaDCA
-    await shariaDCA.registerTokenAddress(coin.symbol, tokenAddress);
-    
-    console.log(`✅ Registered ${coin.symbol} token address in ShariaSwap and ShariaDCA`);
-  }
+  // Note: ShariaSwap and ShariaDCA now query ShariaCompliance directly
+  // No separate registration needed - addresses are stored in ShariaCompliance
+  console.log("✅ Token addresses are now stored in ShariaCompliance");
+  console.log("   ShariaSwap and ShariaDCA will query ShariaCompliance automatically");
   console.log();
 
   // ============================================================================

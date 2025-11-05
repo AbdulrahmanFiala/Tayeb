@@ -31,7 +31,7 @@ async function main() {
   if (!shariaComplianceAddress) {
     console.error("❌ Error: ShariaCompliance contract not found in deployedContracts.json!");
     console.log("\n📝 Please deploy contracts first:");
-    console.log("   npx hardhat run scripts/deploy-contracts.ts --network moonbase\n");
+    console.log("   npx hardhat run scripts/deploy-core.ts --network moonbase\n");
     process.exit(1);
   }
 

@@ -103,6 +103,14 @@ describe("ShariaCompliance", function () {
 
   describe("Get Coin Details", function () {
     it("Should return correct coin details", async function () {
+      // Register BTC first
+      await shariaCompliance.registerShariaCoin(
+        "BTC",
+        "Bitcoin",
+        "BTC",
+        "Decentralized cryptocurrency"
+      );
+      
       const coin = await shariaCompliance.getShariaCoin("BTC");
       
       expect(coin.id).to.equal("BTC");
@@ -121,16 +129,27 @@ describe("ShariaCompliance", function () {
 
   describe("Get All Coins", function () {
     it("Should return all registered coins", async function () {
+      // Register coins first
+      await shariaCompliance.registerShariaCoin("BTC", "Bitcoin", "BTC", "Test");
+      await shariaCompliance.registerShariaCoin("ETH", "Ethereum", "ETH", "Test");
+      await shariaCompliance.registerShariaCoin("USDT", "Tether", "USDT", "Test");
+      await shariaCompliance.registerShariaCoin("USDC", "USD Coin", "USDC", "Test");
+      
       const coins = await shariaCompliance.getAllShariaCoins();
       
       expect(coins.length).to.equal(4);
-      expect(coins[0].symbol).to.equal("BTC");
-      expect(coins[1].symbol).to.equal("ETH");
+      expect(coins[0].id).to.equal("BTC");
+      expect(coins[1].id).to.equal("ETH");
+      expect(coins[2].id).to.equal("USDT");
+      expect(coins[3].id).to.equal("USDC");
     });
   });
 
   describe("Require Sharia Compliant", function () {
     it("Should not revert for compliant coin", async function () {
+      // Register BTC first
+      await shariaCompliance.registerShariaCoin("BTC", "Bitcoin", "BTC", "Test");
+      
       await expect(
         shariaCompliance.requireShariaCompliant("BTC")
       ).to.not.be.reverted;

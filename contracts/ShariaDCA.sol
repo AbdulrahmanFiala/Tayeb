@@ -39,8 +39,7 @@ contract ShariaDCA is Ownable, ReentrancyGuard, AutomationCompatibleInterface {
     /// @notice User's DCA orders
     mapping(address => uint256[]) public userOrders;
 
-    /// @notice Token address registry
-    mapping(string => address) public tokenAddresses;
+    // Token addresses are stored in ShariaCompliance contract
 
     /// @notice Minimum interval between executions (1 hour)
     uint256 public constant MIN_INTERVAL = 1 hours;
@@ -132,18 +131,6 @@ contract ShariaDCA is Ownable, ReentrancyGuard, AutomationCompatibleInterface {
     // ============================================================================
 
     /**
-     * @notice Register token address
-     * @param symbol Token symbol
-     * @param tokenAddress Token contract address
-     */
-    function registerTokenAddress(
-        string memory symbol,
-        address tokenAddress
-    ) external onlyOwner {
-        tokenAddresses[symbol] = tokenAddress;
-    }
-
-    /**
      * @notice Update DEX router
      * @param _newRouter New router address
      */
@@ -181,8 +168,8 @@ contract ShariaDCA is Ownable, ReentrancyGuard, AutomationCompatibleInterface {
             revert ShariaCompliance.NotShariaCompliant(targetSymbol);
         }
 
-        // Get token address
-        address targetToken = tokenAddresses[targetSymbol];
+        // Get token address from ShariaCompliance
+        address targetToken = shariaCompliance.getTokenAddress(targetSymbol);
         if (targetToken == address(0)) {
             revert TokenNotRegistered();
         }

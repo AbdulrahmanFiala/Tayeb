@@ -55,24 +55,28 @@ A comprehensive decentralized platform for Sharia-compliant cryptocurrency inves
 ## 📦 Smart Contracts
 
 ### ShariaCompliance.sol
-Core registry managing Sharia-compliant token approvals.
+Core registry managing Sharia-compliant token approvals. **Contract is source of truth** for coin registrations.
 
 **Key Functions:**
-- `registerShariaCoin(coinId, name, symbol, reason)` - Admin: Add token
-- `removeShariaCoin(coinId)` - Admin: Remove token  
+- `registerShariaCoin(coinId, name, symbol, reason)` - Owner: Add token
+- `removeShariaCoin(coinId)` - Owner: Remove token  
+- `updateComplianceStatus(coinId, verified, reason)` - Owner: Update coin status
 - `isShariaCompliant(coinId)` - Check compliance status
 - `getAllShariaCoins()` - Get all approved tokens
 - `requireShariaCompliant(coinId)` - Validation helper (reverts if not compliant)
+
+**Note:** Coins are registered programmatically from `config/halaCoins.json` during deployment. After deployment, use contract functions to add/remove coins, then sync JSON with `npm run sync:coins`.
 
 ### ShariaSwap.sol
 Token swapping with DEX integration and compliance validation.
 
 **Key Functions:**
 - `swapShariaCompliant(tokenIn, tokenOut, amountIn, minAmountOut, deadline)` - Execute swap
-- `swapGLMRForToken(tokenOut, minAmountOut, deadline)` - Swap native GLMR
+- `swapGLMRForToken(tokenOut, minAmountOut, deadline)` - Swap native DEV
 - `getSwapQuote(tokenIn, tokenOut, amountIn)` - Get price estimate
 - `getUserSwapHistory(user)` - View swap history
-- `registerAsset(tokenAddress, symbol)` - Admin: Register token address
+
+**Note:** Token addresses are automatically queried from `ShariaCompliance` contract. No separate registration needed.
 
 ### ShariaDCA.sol
 Automated Dollar Cost Averaging with Chainlink integration.
@@ -83,6 +87,8 @@ Automated Dollar Cost Averaging with Chainlink integration.
 - `cancelDCAOrder(orderId)` - Cancel and get refund
 - `getDCAOrder(orderId)` - Get order details
 - `getUserOrders(user)` - Get user's orders
+
+**Note:** Token addresses are automatically queried from `ShariaCompliance` contract. No separate registration needed.
 - `checkUpkeep()` / `performUpkeep()` - Chainlink Automation integration
 
 ## 🚀 Getting Started
@@ -127,115 +133,24 @@ For detailed setup instructions, troubleshooting, and post-deployment steps, ref
 
 ## 💻 Usage
 
-> **Note**: For post-deployment setup scripts and token registration, see [SETUP.md](./SETUP.md)
+> **📖 For comprehensive code examples and integration guides, see [USAGE_EXAMPLES.md](./USAGE_EXAMPLES.md)**
 
-### Add Liquidity (Required)
+### Quick Steps
 
-After deployment, add liquidity to enable swaps:
+1. **Add Liquidity** (required after deployment):
+   ```bash
+   npx hardhat run scripts/addLiquidity.ts --network moonbase
+   ```
 
-```bash
-# Edit scripts/addLiquidity.ts with deployed addresses
-npm run compile
-npx hardhat run scripts/addLiquidity.ts --network moonbase
-```
+2. **Access Deployed Addresses**:
+   - Token addresses: `config/halaCoins.json`
+   - Contract addresses: `config/deployedContracts.json`
 
-This will:
-1. Mint WETH (wrapped DEV) and mock tokens
-2. Approve tokens for the router
-3. Add liquidity to WETH/USDT, WETH/USDC, and WETH/DAI pairs
+3. **Integrate with Your App**:
+   - See [USAGE_EXAMPLES.md](./USAGE_EXAMPLES.md) for detailed code examples
+   - Includes: swaps, DCA orders, frontend integration, error handling
 
-### Post-Deployment Setup
-
-After deploying, you need to register token addresses for trading:
-
-```typescript
-// Using ethers.js
-
-import { ethers } from "ethers";
-import ShariaSwapABI from "./artifacts/contracts/ShariaSwap.sol/ShariaSwap.json";
-
-// Connect to Moonbeam
-const provider = new ethers.JsonRpcProvider("https://rpc.api.moonbase.moonbeam.network");
-const wallet = new ethers.Wallet(process.env.PRIVATE_KEY!, provider);
-
-// Initialize contracts
-const shariaSwap = new ethers.Contract(SHARIA_SWAP_ADDRESS, ShariaSwapABI.abi, wallet);
-const shariaDCA = new ethers.Contract(SHARIA_DCA_ADDRESS, ShariaDCAABI.abi, wallet);
-
-// Register token addresses (find actual addresses on Moonbase Alpha)
-const USDT_ADDRESS = "0x..."; // Example
-const USDC_ADDRESS = "0x...";
-
-await shariaSwap.registerAsset(USDT_ADDRESS, "USDT");
-await shariaSwap.registerAsset(USDC_ADDRESS, "USDC");
-
-await shariaDCA.registerTokenAddress("USDT", USDT_ADDRESS);
-await shariaDCA.registerTokenAddress("USDC", USDC_ADDRESS);
-```
-
-### Executing Swaps
-
-```typescript
-// Swap GLMR for USDT (Sharia-compliant)
-const amountIn = ethers.parseEther("1.0"); // 1 GLMR
-const minAmountOut = ethers.parseUnits("5", 6); // Minimum 5 USDT (6 decimals)
-const deadline = Math.floor(Date.now() / 1000) + 60 * 15; // 15 minutes
-
-const tx = await shariaSwap.swapGLMRForToken(
-  USDT_ADDRESS,
-  minAmountOut,
-  deadline,
-  { value: amountIn }
-);
-
-await tx.wait();
-console.log("Swap completed!");
-```
-
-### Creating a DCA Order
-
-```typescript
-// DCA: Invest 1 GLMR into USDT every day for 30 days
-const targetSymbol = "USDT";
-const amountPerInterval = ethers.parseEther("1"); // 1 GLMR per interval
-const intervalSeconds = 86400; // 1 day (24 hours)
-const totalIntervals = 30; // 30 days total
-const totalDeposit = amountPerInterval * BigInt(totalIntervals); // 30 GLMR total
-
-const tx = await shariaDCA.createDCAOrder(
-  targetSymbol,
-  amountPerInterval,
-  intervalSeconds,
-  totalIntervals,
-  { value: totalDeposit }
-);
-
-const receipt = await tx.wait();
-console.log("DCA order created!");
-
-// Get order ID from event
-const event = receipt.logs.find(log => 
-  log.topics[0] === ethers.id("DCAOrderCreated(uint256,address,string,uint256,uint256,uint256)")
-);
-const orderId = ethers.AbiCoder.defaultAbiCoder().decode(["uint256"], event.topics[1])[0];
-```
-
-### Setting Up Chainlink Automation (Optional)
-
-For automatic DCA execution:
-
-1. Visit: https://automation.chain.link/moonbase
-2. Click "Register New Upkeep"
-3. Select "Custom Logic"
-4. Enter your ShariaDCA contract address
-5. Fund with LINK tokens
-6. DCA orders will execute automatically when due
-
-Or execute manually:
-```typescript
-const tx = await shariaDCA.executeDCAOrder(orderId);
-await tx.wait();
-```
+For coin management, see [config/README.md](./config/README.md).
 
 ## 🌐 Moonbeam Network Details
 
@@ -261,50 +176,17 @@ await tx.wait();
 
 - **WETH (Wrapped DEV)**: `0xD909178CC99d318e4D46e7E66a972955859670E1`
 
-## 🔐 Security
-
-- All contracts use OpenZeppelin's battle-tested libraries
-- ReentrancyGuard on all state-changing functions
-- Ownable pattern for admin functions
-- SafeERC20 for token transfers
-- Custom errors for gas efficiency
 
 ## 📚 Resources
 
+- **Usage Examples**: See [USAGE_EXAMPLES.md](./USAGE_EXAMPLES.md) for detailed code examples and integration guides
 - **Setup Guide**: See [SETUP.md](./SETUP.md) for quick start and troubleshooting
-- **Migration Guide**: See [MIGRATION_GUIDE.md](./MIGRATION_GUIDE.md) for Ink! → Solidity details
+- **Deployment Workflow**: See [DEPLOYMENT_WORKFLOW.md](./DEPLOYMENT_WORKFLOW.md) for deployment details
 - **Moonbeam Docs**: https://docs.moonbeam.network/
 - **Moonbase Faucet**: https://faucet.moonbeam.network/
 - **Chainlink Automation**: https://automation.chain.link/
 - **Hardhat**: https://hardhat.org/
 
-## 🛠️ Development
-
-### Project Structure
-
-```
-Tayeb/
-├── contracts/           # Solidity smart contracts
-│   ├── ShariaCompliance.sol
-│   ├── ShariaSwap.sol
-│   ├── ShariaDCA.sol
-│   └── interfaces/
-│       └── IDEXRouter.sol
-├── scripts/            # Deployment scripts
-│   └── deploy.ts
-├── test/              # Test files
-│   └── ShariaCompliance.test.ts
-├── hardhat.config.ts  # Hardhat configuration
-├── package.json       # Dependencies
-└── README.md         # This file
-```
-
-### Adding New Features
-
-1. Create new contract in `contracts/`
-2. Add deployment logic in `scripts/deploy.ts`
-3. Write tests in `test/`
-4. Update README with usage examples
 
 ### Development Workflow
 
