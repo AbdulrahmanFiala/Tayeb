@@ -8,7 +8,7 @@ This document contains detailed code examples for integrating with the Tayeb pla
 - [Coin Management Workflow](#coin-management-workflow)
 - [Executing Swaps](#executing-swaps)
 - [Creating DCA Orders](#creating-dca-orders)
-- [Setting Up Chainlink Automation](#setting-up-chainlink-automation)
+- [Setting Up Automation](#setting-up-automation)
 
 ## Post-Deployment Setup
 
@@ -434,35 +434,37 @@ console.log("Order canceled! Refund will be sent to your address.");
 ### Manual DCA Execution
 
 ```typescript
-// Execute DCA order manually (before Chainlink Automation is set up)
+// Execute DCA order manually
 const tx = await shariaDCA.executeDCAOrder(orderId);
 const receipt = await tx.wait();
 console.log("DCA interval executed!", receipt.transactionHash);
 ```
 
-## Setting Up Chainlink Automation
+## Setting Up Automation
 
 ### Automatic DCA Execution
 
-For automatic DCA execution, set up Chainlink Automation:
+For automatic DCA execution, use the local automation script:
 
-1. Visit: https://automation.chain.link/moonbase
-2. Click "Register New Upkeep"
-3. Select "Custom Logic"
-4. Enter your ShariaDCA contract address
-5. Fund with LINK tokens
-6. DCA orders will execute automatically when due
+1. Ensure your `.env` file has `PRIVATE_KEY` set (executor wallet)
+2. Ensure the executor wallet has DEV tokens for gas
+3. Run the automation script:
+   ```bash
+   npx hardhat run scripts/auto-execute-dca.ts --network moonbase
+   ```
+4. The script will check every 10 seconds and execute ready orders automatically
+5. Keep the script running for continuous automation
 
-### Manual Execution (Alternative)
+### Manual Execution
 
-If Chainlink Automation is not set up, you can execute orders manually:
+You can also execute orders manually:
 
 ```typescript
 // Check if order is ready for execution
 const order = await shariaDCA.getDCAOrder(orderId);
 const currentTime = Math.floor(Date.now() / 1000);
 
-if (Number(order.nextExecutionTime) <= currentTime && order.active) {
+if (Number(order.nextExecutionTime) <= currentTime && order.isActive) {
   console.log("Order is ready for execution!");
   
   const tx = await shariaDCA.executeDCAOrder(orderId);
@@ -476,16 +478,32 @@ if (Number(order.nextExecutionTime) <= currentTime && order.active) {
 ### Check Upkeep Status
 
 ```typescript
-// Check if upkeep is needed (for Chainlink Automation)
+// Check if upkeep is needed (for automation script)
 const [upkeepNeeded, performData] = await shariaDCA.checkUpkeep("0x");
 
 if (upkeepNeeded) {
   console.log("Upkeep needed! Orders ready for execution.");
-  // Chainlink will call performUpkeep() automatically
+  const orderIds = ethers.AbiCoder.defaultAbiCoder().decode(
+    ["uint256[]"],
+    performData
+  )[0];
+  console.log("Ready orders:", orderIds);
+  
+  // Execute via automation script or manually call performUpkeep()
 } else {
   console.log("No upkeep needed at this time.");
 }
 ```
+
+### One-Time Execution Script
+
+For cron jobs or scheduled tasks, use the one-time execution script:
+
+```bash
+npx hardhat run scripts/execute-ready-orders.ts --network moonbase
+```
+
+This script executes all ready orders once and exits, perfect for GitHub Actions or cron jobs.
 
 ## Integration with ShariaCompliance
 

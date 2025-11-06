@@ -5,7 +5,6 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@chainlink/contracts/src/v0.8/automation/AutomationCompatible.sol";
 import "./ShariaCompliance.sol";
 import "./interfaces/IDEXRouter.sol";
 import "./interfaces/IWETH.sol";
@@ -15,9 +14,9 @@ import "./testnet/SimpleFactory.sol";
 /**
  * @title ShariaDCA
  * @notice Automated Dollar Cost Averaging for Sharia-compliant tokens
- * @dev Uses Chainlink Automation for periodic execution
+ * @dev Uses local automation script for periodic execution on testnet
  */
-contract ShariaDCA is Ownable, ReentrancyGuard, AutomationCompatibleInterface {
+contract ShariaDCA is Ownable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     // ============================================================================
@@ -297,7 +296,7 @@ contract ShariaDCA is Ownable, ReentrancyGuard, AutomationCompatibleInterface {
     }
 
     /**
-     * @notice Execute a DCA order (called by Chainlink Automation or manually)
+     * @notice Execute a DCA order (called by automation script or manually)
      * @param orderId Order ID to execute
      */
     function executeDCAOrder(uint256 orderId) public nonReentrant {
@@ -404,18 +403,18 @@ contract ShariaDCA is Ownable, ReentrancyGuard, AutomationCompatibleInterface {
     }
 
     // ============================================================================
-    // CHAINLINK AUTOMATION
+    // AUTOMATION FUNCTIONS
     // ============================================================================
 
     /**
-     * @notice Check if upkeep is needed (Chainlink Automation)
+     * @notice Check if upkeep is needed (for automation script)
      * @dev Checks all active orders to see if any need execution
      * @return upkeepNeeded Whether upkeep is needed
      * @return performData Encoded order IDs to execute
      */
     function checkUpkeep(
         bytes calldata /* checkData */
-    ) external view override returns (bool upkeepNeeded, bytes memory performData) {
+    ) external view returns (bool upkeepNeeded, bytes memory performData) {
         uint256[] memory ordersToExecute = new uint256[](nextOrderId);
         uint256 count = 0;
 
@@ -447,14 +446,22 @@ contract ShariaDCA is Ownable, ReentrancyGuard, AutomationCompatibleInterface {
     }
 
     /**
-     * @notice Perform upkeep (Chainlink Automation)
+     * @notice Perform upkeep (called by automation script)
      * @param performData Encoded order IDs to execute
+     * @dev Catches errors per order to prevent one failure from blocking others
      */
-    function performUpkeep(bytes calldata performData) external override {
+    function performUpkeep(bytes calldata performData) external {
         uint256[] memory orderIds = abi.decode(performData, (uint256[]));
         
         for (uint256 i = 0; i < orderIds.length; i++) {
-            try this.executeDCAOrder(orderIds[i]) {} catch {}
+            // Use external call (this.) to enable try-catch error handling
+            // This allows one failed order to not block execution of other orders
+            try this.executeDCAOrder(orderIds[i]) {
+                // Order executed successfully - event emitted in executeDCAOrder
+            } catch {
+                // Silently continue - failed order will be retried in next upkeep cycle
+                // This prevents one failed order from blocking batch execution
+            }
         }
     }
 

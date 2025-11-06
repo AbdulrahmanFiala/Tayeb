@@ -19,8 +19,8 @@ A comprehensive decentralized platform for Sharia-compliant cryptocurrency inves
 
 ### 3. Dollar Cost Averaging (ShariaDCA)
 - **Automated DCA**: Schedule periodic investments into Sharia-compliant tokens
-- **Chainlink Automation**: Trustless execution via Chainlink Keepers
-- **Flexible Intervals**: Set custom time intervals (1 hour to 30 days)
+- **Local Automation**: Automated execution via local script
+- **Flexible Intervals**: Set custom time intervals (any duration for testing)
 - **Prepaid Deposits**: Lock funds for all future DCA executions
 - **Cancel Anytime**: Get refunds for uncompleted intervals
 
@@ -41,7 +41,7 @@ A comprehensive decentralized platform for Sharia-compliant cryptocurrency inves
             │                                     │
 ┌───────────┴──────────┐                         │
 │     ShariaDCA        │                         │
-│  - Chainlink Auto    │                         │
+│  - Automation Script │                         │
 │  - Scheduled Orders  │                         │
 └──────────────────────┘                         │
             │                                     │
@@ -82,20 +82,22 @@ Token swapping with DEX integration and compliance validation.
 - Token addresses are automatically queried from `ShariaCompliance` contract. No separate registration needed.
 
 ### ShariaDCA.sol
-Automated Dollar Cost Averaging with Chainlink integration.
+Automated Dollar Cost Averaging with local automation script.
 
 **Key Functions:**
-- `createDCAOrder(sourceSymbol, targetSymbol, amountPerInterval, intervalSeconds, totalIntervals)` - Create order (supports any token → any token)
-- `executeDCAOrder(orderId)` - Execute next interval (manual or automated)
+- `createDCAOrderWithDEV(targetToken, amountPerInterval, intervalSeconds, totalIntervals)` - Create order with native DEV
+- `createDCAOrderWithToken(sourceToken, targetToken, amountPerInterval, intervalSeconds, totalIntervals)` - Create order with ERC20 tokens
+- `executeDCAOrder(orderId)` - Execute next interval (called by automation script or manually)
 - `cancelDCAOrder(orderId)` - Cancel and get refund
 - `getDCAOrder(orderId)` - Get order details
 - `getUserOrders(user)` - Get user's orders
+- `checkUpkeep()` / `performUpkeep()` - Automation functions for local script
 
 **Features:**
 - **Any Token → Any Token DCA**: Deposit DEV, USDC, BTC, or any Sharia-compliant token and DCA into any other token
 - **Automatic Routing**: Uses the same routing logic as ShariaSwap (direct pairs or through USDC)
 - Token addresses are automatically queried from `ShariaCompliance` contract. No separate registration needed.
-- `checkUpkeep()` / `performUpkeep()` - Chainlink Automation integration
+- **Local Automation**: Run `scripts/auto-execute-dca.ts` to automatically execute orders
 
 ## 🚀 Getting Started
 
@@ -208,7 +210,6 @@ For coin management, see [USAGE_EXAMPLES.md](./USAGE_EXAMPLES.md#coin-management
 - **Deployment Workflow**: See [DEPLOYMENT_WORKFLOW.md](./DEPLOYMENT_WORKFLOW.md) for deployment details
 - **Moonbeam Docs**: https://docs.moonbeam.network/
 - **Moonbase Faucet**: https://faucet.moonbeam.network/
-- **Chainlink Automation**: https://automation.chain.link/
 - **Hardhat**: https://hardhat.org/
 
 

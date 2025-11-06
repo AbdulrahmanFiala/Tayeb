@@ -213,7 +213,7 @@ async function main() {
   console.log("1. Add liquidity: npx hardhat run scripts/addLiquidity.ts --network moonbase");
   console.log("2. Test swaps through ShariaSwap");
   console.log("3. Register more Sharia-compliant tokens via registerShariaCoin()");
-  console.log("4. Set up Chainlink Automation for ShariaDCA");
+  console.log("4. Run automation script: npx hardhat run scripts/auto-execute-dca.ts --network moonbase");
   console.log();
   console.log("🔍 Verify contracts on Moonscan (optional) - requires ETHERSCAN_API_KEY");
   console.log("Get API key from: https://moonscan.io/myapikey");
