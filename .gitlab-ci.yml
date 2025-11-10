@@ -8,7 +8,7 @@ dca_executor:
     MOONBASE_RPC_URL: https://rpc.api.moonbase.moonbeam.network
   script:
     - npm ci
-    - npx hardhat run scripts/execute-ready-orders.ts --network moonbase
+    - npx hardhat run scripts/automation/execute-ready-orders.ts --network moonbase
   rules:
     - if: '$CI_PIPELINE_SOURCE == "schedule"'
 
