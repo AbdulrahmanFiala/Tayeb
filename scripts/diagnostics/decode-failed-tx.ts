@@ -11,10 +11,10 @@ async function main() {
   
   if (!txHash || txHash === "") {
     console.log("Usage:");
-    console.log("  TX_HASH=0x... npx hardhat run scripts/decode-failed-tx.ts --network moonbase");
+    console.log("  TX_HASH=0x... npx hardhat run scripts/diagnostics/decode-failed-tx.ts --network moonbase");
     console.log();
     console.log("Example:");
-    console.log("  TX_HASH=0x773aac5810a73346407eccc695b23aa9197653b4d306effe58f2714683509a23 npx hardhat run scripts/decode-failed-tx.ts --network moonbase");
+    console.log("  TX_HASH=0x773aac5810a73346407eccc695b23aa9197653b4d306effe58f2714683509a23 npx hardhat run scripts/diagnostics/decode-failed-tx.ts --network moonbase");
     process.exit(1);
   }
 
@@ -125,7 +125,7 @@ async function decodeFunctionCall(tx: any, receipt: any) {
   console.log();
 
   // Try to find contract artifact
-  const artifactsDir = path.join(__dirname, "..", "artifacts", "contracts");
+  const artifactsDir = path.join(__dirname, "..", "..", "artifacts", "contracts");
   let decoded: any = null;
   let contractName = "Unknown";
   const functionSelector = tx.data.substring(0, 10);
@@ -352,7 +352,7 @@ async function decodeErrorData(errorData: string) {
   }
 
   // Try to find custom errors in artifacts
-  const artifactsDir = path.join(__dirname, "..", "artifacts", "contracts");
+  const artifactsDir = path.join(__dirname, "..", "..", "artifacts", "contracts");
   if (fs.existsSync(artifactsDir)) {
     const contractFiles = findContractFiles(artifactsDir);
     const errorSelector = errorData.substring(0, 10);

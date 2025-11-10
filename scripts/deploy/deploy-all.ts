@@ -1,6 +1,6 @@
 import { execSync } from "child_process";
-import deployedContractsConfig from "../config/deployedContracts.json";
-import { DeployedContracts } from "../config/types";
+import deployedContractsConfig from "../../config/deployedContracts.json";
+import { DeployedContracts } from "../../config/types";
 
 /**
  * Full Deployment Wrapper
@@ -37,7 +37,7 @@ async function main() {
     console.log(`📦 Deploying ${name}...`);
     console.log("=".repeat(60));
     try {
-      execSync(`npx hardhat run scripts/${script} --network moonbase`, {
+      execSync(`npx hardhat run scripts/deploy/${script} --network moonbase`, {
         stdio: "inherit",
         timeout,
       });
@@ -56,7 +56,7 @@ async function main() {
   console.log("=".repeat(60));
   console.log("\n📝 All addresses saved to config JSON files");
   console.log("\n💡 Next steps:");
-  console.log("Add liquidity: npx hardhat run scripts/addLiquidity.ts --network moonbase");
+  console.log("Add liquidity: npx hardhat run scripts/liquidity/addLiquidity.ts --network moonbase");
   console.log("Test your contracts!");
 }
 

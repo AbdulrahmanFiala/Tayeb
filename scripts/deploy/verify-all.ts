@@ -1,7 +1,7 @@
 import { run } from "hardhat";
-import halaCoinsConfig from "../config/halaCoins.json";
-import deployedContractsConfig from "../config/deployedContracts.json";
-import { HalaCoinsConfig, DeployedContracts } from "../config/types";
+import halaCoinsConfig from "../../config/halaCoins.json";
+import deployedContractsConfig from "../../config/deployedContracts.json";
+import { HalaCoinsConfig, DeployedContracts } from "../../config/types";
 
 /**
  * Verify all deployed contracts on Moonbase Alpha

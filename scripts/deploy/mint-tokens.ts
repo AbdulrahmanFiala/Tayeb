@@ -1,6 +1,6 @@
 import { ethers } from "hardhat";
-import halaCoinsConfig from "../config/halaCoins.json";
-import { HalaCoinsConfig } from "../config/types";
+import halaCoinsConfig from "../../config/halaCoins.json";
+import { HalaCoinsConfig } from "../../config/types";
 
 /**
  * Mint Initial Tokens
@@ -59,7 +59,7 @@ async function main() {
   console.log("   - Other coins: 1M each");
   console.log("   - Recipient:   ", deployer.address);
   console.log("\n💡 Next Steps:");
-  console.log("Add liquidity: npx hardhat run scripts/addLiquidity.ts --network moonbase");
+  console.log("Add liquidity: npx hardhat run scripts/liquidity/addLiquidity.ts --network moonbase");
   console.log("=".repeat(60));
   console.log();
 }

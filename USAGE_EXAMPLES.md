@@ -117,7 +117,7 @@ npm run listen:events
 2. Deploy token: `npm run deploy:tokens` (deploys new token)
 3. Create pairs: `npm run deploy:pairs` (creates pairs for new token)
 4. Run `npm run deploy:core` (registers new coin in ShariaCompliance)
-5. Add liquidity: `npx hardhat run scripts/addLiquidity.ts --network moonbase` (if needed)
+5. Add liquidity: `npx hardhat run scripts/liquidity/addLiquidity.ts --network moonbase` (if needed)
 
 ### Code Example: Register Coin from Frontend
 
@@ -450,7 +450,7 @@ For automatic DCA execution, use the local automation script:
 2. Ensure the executor wallet has DEV tokens for gas
 3. Run the automation script:
    ```bash
-   npx hardhat run scripts/auto-execute-dca.ts --network moonbase
+   npx hardhat run scripts/automation/auto-execute-dca.ts --network moonbase
    ```
 4. The script will check every 60 seconds and execute ready orders automatically
 5. Keep the script running for continuous automation
@@ -500,7 +500,7 @@ if (upkeepNeeded) {
 For cron jobs or scheduled tasks, use the one-time execution script:
 
 ```bash
-npx hardhat run scripts/execute-ready-orders.ts --network moonbase
+npx hardhat run scripts/automation/execute-ready-orders.ts --network moonbase
 ```
 
 This script executes all ready orders once and exits, perfect for GitHub Actions or cron jobs.
@@ -597,7 +597,7 @@ If a transaction fails, use the decode script to understand what went wrong:
 ```bash
 # Using environment variable
 TX_HASH=0x773aac5810a73346407eccc695b23aa9197653b4d306effe58f2714683509a23 \
-npx hardhat run scripts/decode-failed-tx.ts --network moonbase
+npx hardhat run scripts/diagnostics/decode-failed-tx.ts --network moonbase
 ```
 
 ## Frontend Integration (React Example)

@@ -6,16 +6,16 @@
   "scripts": {
     "compile": "hardhat compile",
     "test": "hardhat test",
-    "deploy": "hardhat run scripts/deploy-all.ts",
-    "deploy:testnet": "hardhat run scripts/deploy-all.ts --network moonbase",
-    "deploy:tokens": "hardhat run scripts/deploy-tokens.ts --network moonbase",
-    "deploy:amm-core": "hardhat run scripts/deploy-amm-core.ts --network moonbase",
-    "deploy:pairs": "hardhat run scripts/create-pairs.ts --network moonbase",
-    "deploy:mint": "hardhat run scripts/mint-tokens.ts --network moonbase",
-    "deploy:core": "hardhat run scripts/deploy-core.ts --network moonbase",
-    "verify:all": "hardhat run scripts/verify-all.ts --network moonbase",
-    "sync:coins": "hardhat run scripts/sync-coins-from-contract.ts --network moonbase",
-    "listen:events": "hardhat run scripts/listen-coin-events.ts --network moonbase"
+    "deploy": "hardhat run scripts/deploy/deploy-all.ts",
+    "deploy:testnet": "hardhat run scripts/deploy/deploy-all.ts --network moonbase",
+    "deploy:tokens": "hardhat run scripts/deploy/deploy-tokens.ts --network moonbase",
+    "deploy:amm-core": "hardhat run scripts/deploy/deploy-amm-core.ts --network moonbase",
+    "deploy:pairs": "hardhat run scripts/deploy/create-pairs.ts --network moonbase",
+    "deploy:mint": "hardhat run scripts/deploy/mint-tokens.ts --network moonbase",
+    "deploy:core": "hardhat run scripts/deploy/deploy-core.ts --network moonbase",
+    "verify:all": "hardhat run scripts/deploy/verify-all.ts --network moonbase",
+    "sync:coins": "hardhat run scripts/automation/sync-coins-from-contract.ts --network moonbase",
+    "listen:events": "hardhat run scripts/automation/listen-coin-events.ts --network moonbase"
   },
   "keywords": [
     "sharia",

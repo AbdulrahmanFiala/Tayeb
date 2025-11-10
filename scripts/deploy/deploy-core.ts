@@ -2,10 +2,10 @@ import { ethers } from "hardhat";
 import * as dotenv from "dotenv";
 import * as fs from "fs";
 import * as path from "path";
-import halaCoinsConfig from "../config/halaCoins.json";
-import deployedContractsConfig from "../config/deployedContracts.json";
-import { HalaCoinsConfig, DeployedContracts } from "../config/types";
-import { deployOrVerifyContract } from "./utils/deployHelpers";
+import halaCoinsConfig from "../../config/halaCoins.json";
+import deployedContractsConfig from "../../config/deployedContracts.json";
+import { HalaCoinsConfig, DeployedContracts } from "../../config/types";
+import { deployOrVerifyContract } from "../utils/deployHelpers";
 
 /**
  * Deploy Main Contracts to Moonbase Alpha Testnet
@@ -39,7 +39,7 @@ async function main() {
   if (!DEX_ROUTER || !FACTORY_ADDRESS) {
     console.error("❌ Error: AMM addresses not found in deployedContracts.json!");
     console.log("\n📝 Please run deploy-amm-core.ts first:");
-    console.log("   npx hardhat run scripts/deploy-amm-core.ts --network moonbase\n");
+    console.log("   npx hardhat run scripts/deploy/deploy-amm-core.ts --network moonbase\n");
     process.exit(1);
   }
 
@@ -108,7 +108,7 @@ async function main() {
   // Update deployedContracts.json with main contract addresses
   // ============================================================================
   console.log("📝 Updating deployedContracts.json with main contract addresses...");
-  const contractsPath = path.join(__dirname, "..", "config", "deployedContracts.json");
+  const contractsPath = path.join(__dirname, "..", "..", "config", "deployedContracts.json");
 
   const updatedContracts = {
     ...contractsConfig,
@@ -210,10 +210,10 @@ async function main() {
   console.log("=".repeat(60));
   console.log();
   console.log("🔧 Next Steps:");
-  console.log("1. Add liquidity: npx hardhat run scripts/addLiquidity.ts --network moonbase");
+  console.log("1. Add liquidity: npx hardhat run scripts/liquidity/addLiquidity.ts --network moonbase");
   console.log("2. Test swaps through ShariaSwap");
   console.log("3. Register more Sharia-compliant tokens via registerShariaCoin()");
-  console.log("4. Run automation script: npx hardhat run scripts/auto-execute-dca.ts --network moonbase");
+  console.log("4. Run automation script: npx hardhat run scripts/automation/auto-execute-dca.ts --network moonbase");
   console.log();
   console.log("🔍 Verify contracts on Moonscan (optional) - requires ETHERSCAN_API_KEY");
   console.log("Get API key from: https://moonscan.io/myapikey");

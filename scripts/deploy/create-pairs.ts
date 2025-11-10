@@ -1,10 +1,10 @@
 import { ethers } from "hardhat";
 import * as fs from "fs";
 import * as path from "path";
-import halaCoinsConfig from "../config/halaCoins.json";
-import deployedContractsConfig from "../config/deployedContracts.json";
-import { HalaCoinsConfig, getNonStablecoins, DeployedContracts } from "../config/types";
-import { createOrVerifyPair } from "./utils/deployHelpers";
+import halaCoinsConfig from "../../config/halaCoins.json";
+import deployedContractsConfig from "../../config/deployedContracts.json";
+import { HalaCoinsConfig, getNonStablecoins, DeployedContracts } from "../../config/types";
+import { createOrVerifyPair } from "../utils/deployHelpers";
 
 /**
  * Create Liquidity Pairs
@@ -62,7 +62,7 @@ async function main() {
   let existingPairsCount = 0;
   let newPairsCount = 0;
   
-  const contractsPath = path.join(__dirname, "..", "config", "deployedContracts.json");
+  const contractsPath = path.join(__dirname, "..", "..", "config", "deployedContracts.json");
   
   // Helper to create a pair and track counts
   async function createPairAndTrack(
@@ -172,7 +172,7 @@ async function main() {
   console.log("=".repeat(60));
   console.log();
   console.log("💡 Next Steps:");
-  console.log("Mint tokens: npx hardhat run scripts/mint-tokens.ts --network moonbase");
+  console.log("Mint tokens: npx hardhat run scripts/deploy/mint-tokens.ts --network moonbase");
   console.log();
 }
 

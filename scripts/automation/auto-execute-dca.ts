@@ -1,6 +1,6 @@
 import { ethers } from "hardhat";
 import * as dotenv from "dotenv";
-import deployedContracts from "../config/deployedContracts.json";
+import deployedContracts from "../../config/deployedContracts.json";
 
 dotenv.config();
 

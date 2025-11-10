@@ -2,7 +2,7 @@ import { ethers } from "hardhat";
 
 /**
  * Remove liquidity from AMM pairs
- * Usage: npx hardhat run scripts/removeLiquidity.ts --network moonbase
+ * Usage: npx hardhat run scripts/liquidity/removeLiquidity.ts --network moonbase
  */
 async function main() {
   const [deployer] = await ethers.getSigners();

@@ -34,7 +34,7 @@ All scripts are idempotent - they check for existing contracts and skip if alrea
 ```bash
 npm run deploy:tokens
 # or
-npx hardhat run scripts/deploy-tokens.ts --network moonbase
+npx hardhat run scripts/deploy/deploy-tokens.ts --network moonbase
 ```
 This deploys:
 - All 16 Initial Hala Coins (MockERC20: BTC, ETH, USDT, USDC, etc.)
@@ -44,7 +44,7 @@ This deploys:
 ```bash
 npm run deploy:amm-core
 # or
-npx hardhat run scripts/deploy-amm-core.ts --network moonbase
+npx hardhat run scripts/deploy/deploy-amm-core.ts --network moonbase
 ```
 This deploys:
 - SimpleFactory
@@ -56,7 +56,7 @@ This deploys:
 ```bash
 npm run deploy:pairs
 # or
-npx hardhat run scripts/create-pairs.ts --network moonbase
+npx hardhat run scripts/deploy/create-pairs.ts --network moonbase
 ```
 This creates:
 - Liquidity pairs (each non-stablecoin with USDC, plus USDC/USDT pair)
@@ -66,7 +66,7 @@ This creates:
 ```bash
 npm run deploy:mint
 # or
-npx hardhat run scripts/mint-tokens.ts --network moonbase
+npx hardhat run scripts/deploy/mint-tokens.ts --network moonbase
 ```
 This mints initial tokens to the deployer for testing.
 
@@ -74,7 +74,7 @@ This mints initial tokens to the deployer for testing.
 ```bash
 npm run deploy:core
 # or
-npx hardhat run scripts/deploy-core.ts --network moonbase
+npx hardhat run scripts/deploy/deploy-core.ts --network moonbase
 ```
 This:
 - Reads AMM addresses from `deployedContracts.json`
@@ -86,7 +86,7 @@ This:
 
 **6. Add Liquidity**
 ```bash
-npx hardhat run scripts/addLiquidity.ts --network moonbase
+npx hardhat run scripts/liquidity/addLiquidity.ts --network moonbase
 ```
 This:
 - Reads addresses from JSON configs (no manual editing needed!)

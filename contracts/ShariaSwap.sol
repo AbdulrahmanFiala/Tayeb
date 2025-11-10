@@ -84,6 +84,7 @@ contract ShariaSwap is Ownable, ReentrancyGuard {
     error InvalidPath();
     error SwapFailed();
     error AssetNotRegistered();
+    error QuoteAmountTooSmall(address tokenIn, address tokenOut, uint256 amountIn);
 
     // ============================================================================
     // CONSTRUCTOR
@@ -159,6 +160,12 @@ contract ShariaSwap is Ownable, ReentrancyGuard {
         // Build swap path (auto-routes through USDC if no direct pair)
         address[] memory path = _buildSwapPath(tokenIn, tokenOut);
 
+        // Pre-validate quote to catch tiny inputs before transferring
+        uint256 expectedAmountOut = _validateQuote(tokenIn, tokenOut, amountIn, path);
+        if (expectedAmountOut < minAmountOut) {
+            revert SlippageExceeded();
+        }
+
         // Execute swap
         uint256[] memory amounts;
         try dexRouter.swapExactTokensForTokens(
@@ -232,6 +239,12 @@ contract ShariaSwap is Ownable, ReentrancyGuard {
         // Build swap path (auto-routes through USDC if no direct pair)
         address[] memory path = _buildSwapPath(WETH, tokenOut);
 
+        // Pre-validate quote to catch tiny inputs before wrapping
+        uint256 expectedAmountOut = _validateQuote(WETH, tokenOut, msg.value, path);
+        if (expectedAmountOut < minAmountOut) {
+            revert SlippageExceeded();
+        }
+
         // Execute swap
         uint256[] memory amounts;
         try dexRouter.swapExactTokensForTokens(
@@ -289,9 +302,7 @@ contract ShariaSwap is Ownable, ReentrancyGuard {
     ) external view returns (uint256 amountOut) {
         // Build swap path (auto-routes through USDC if no direct pair)
         address[] memory path = _buildSwapPath(tokenIn, tokenOut);
-
-        uint256[] memory amounts = dexRouter.getAmountsOut(amountIn, path);
-        return amounts[amounts.length - 1];
+        return _previewQuote(tokenIn, tokenOut, amountIn, path);
     }
 
     /**
@@ -328,6 +339,40 @@ contract ShariaSwap is Ownable, ReentrancyGuard {
         
         // Use library to build path
         return SwapPathBuilder.buildSwapPath(address(factory), tokenIn, tokenOut, usdc);
+    }
+
+    function _previewQuote(
+        address tokenIn,
+        address tokenOut,
+        uint256 amountIn,
+        address[] memory path
+    ) internal view returns (uint256) {
+        if (amountIn == 0) {
+            revert QuoteAmountTooSmall(tokenIn, tokenOut, amountIn);
+        }
+
+        uint256[] memory amounts;
+        try dexRouter.getAmountsOut(amountIn, path) returns (uint256[] memory _amounts) {
+            amounts = _amounts;
+        } catch {
+            revert QuoteAmountTooSmall(tokenIn, tokenOut, amountIn);
+        }
+
+        uint256 outputAmount = amounts[amounts.length - 1];
+        if (outputAmount == 0) {
+            revert QuoteAmountTooSmall(tokenIn, tokenOut, amountIn);
+        }
+
+        return outputAmount;
+    }
+
+    function _validateQuote(
+        address tokenIn,
+        address tokenOut,
+        uint256 amountIn,
+        address[] memory path
+    ) internal view returns (uint256) {
+        return _previewQuote(tokenIn, tokenOut, amountIn, path);
     }
 
     /**

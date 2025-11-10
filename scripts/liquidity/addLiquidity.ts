@@ -1,12 +1,12 @@
 import { ethers } from "hardhat";
 import * as dotenv from "dotenv";
-import halaCoinsConfig from "../config/halaCoins.json";
-import deployedContractsConfig from "../config/deployedContracts.json";
-import { HalaCoinsConfig, getNonStablecoins, getCoinBySymbol, DeployedContracts } from "../config/types";
+import halaCoinsConfig from "../../config/halaCoins.json";
+import deployedContractsConfig from "../../config/deployedContracts.json";
+import { HalaCoinsConfig, getNonStablecoins, getCoinBySymbol, DeployedContracts } from "../../config/types";
 
 /**
  * Add liquidity to AMM pairs for all Initial Hala Coins
- * Usage: npx hardhat run scripts/addLiquidity.ts --network moonbase
+ * Usage: npx hardhat run scripts/liquidity/addLiquidity.ts --network moonbase
  * 
  * Reads addresses from config JSON files
  * Adds liquidity to all token/USDC pairs
@@ -33,7 +33,7 @@ async function main() {
   if (!ROUTER_ADDRESS || !USDC_ADDRESS) {
     console.error("❌ Error: AMM addresses not found in config files!");
     console.log("\n📝 Please run deploy-amm-core.ts first:");
-    console.log("   npx hardhat run scripts/deploy-amm-core.ts --network moonbase\n");
+    console.log("   npx hardhat run scripts/deploy/deploy-amm-core.ts --network moonbase\n");
     process.exit(1);
   }
 
@@ -111,7 +111,7 @@ async function main() {
     console.error("\n📝 Please create pairs first:");
     console.error("   npm run deploy:pairs");
     console.error("   or");
-    console.error("   npx hardhat run scripts/create-pairs.ts --network moonbase\n");
+    console.error("   npx hardhat run scripts/deploy/create-pairs.ts --network moonbase\n");
     process.exit(1);
   }
   

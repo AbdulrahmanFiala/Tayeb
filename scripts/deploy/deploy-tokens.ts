@@ -1,10 +1,10 @@
 import { ethers } from "hardhat";
 import * as fs from "fs";
 import * as path from "path";
-import halaCoinsConfig from "../config/halaCoins.json";
-import deployedContractsConfig from "../config/deployedContracts.json";
-import { HalaCoinsConfig, DeployedContracts } from "../config/types";
-import { deployOrVerifyContract } from "./utils/deployHelpers";
+import halaCoinsConfig from "../../config/halaCoins.json";
+import deployedContractsConfig from "../../config/deployedContracts.json";
+import { HalaCoinsConfig, DeployedContracts } from "../../config/types";
+import { deployOrVerifyContract } from "../utils/deployHelpers";
 
 /**
  * Deploy Mock Tokens - Initial Hala Coins
@@ -55,7 +55,7 @@ async function main() {
       // Save address immediately after deployment (incremental save)
       try {
         // Save to halaCoins.json
-        const configPath = path.join(__dirname, "..", "config", "halaCoins.json");
+        const configPath = path.join(__dirname, "..", "..", "config", "halaCoins.json");
         const currentConfig = JSON.parse(fs.readFileSync(configPath, "utf8"));
         currentConfig.coins = currentConfig.coins.map((c: any) => 
           c.symbol === coin.symbol 
@@ -66,7 +66,7 @@ async function main() {
         fs.writeFileSync(configPath, JSON.stringify(currentConfig, null, 2) + "\n");
         
         // Also save to deployedContracts.json
-        const contractsPath = path.join(__dirname, "..", "config", "deployedContracts.json");
+        const contractsPath = path.join(__dirname, "..", "..", "config", "deployedContracts.json");
         const contractsConfig = JSON.parse(fs.readFileSync(contractsPath, "utf8")) as DeployedContracts;
         if (!contractsConfig.tokens) {
           contractsConfig.tokens = {};
@@ -87,7 +87,7 @@ async function main() {
   console.log("📝 Performing final sync...");
   
   // Sync halaCoins.json
-  const configPath = path.join(__dirname, "..", "config", "halaCoins.json");
+  const configPath = path.join(__dirname, "..", "..", "config", "halaCoins.json");
   const currentConfig = JSON.parse(fs.readFileSync(configPath, "utf8"));
   currentConfig.metadata = {
     ...currentConfig.metadata,
@@ -96,7 +96,7 @@ async function main() {
   fs.writeFileSync(configPath, JSON.stringify(currentConfig, null, 2) + "\n");
   
   // Sync deployedContracts.json with all tokens
-  const contractsPath = path.join(__dirname, "..", "config", "deployedContracts.json");
+  const contractsPath = path.join(__dirname, "..", "..", "config", "deployedContracts.json");
   const contractsConfig = JSON.parse(fs.readFileSync(contractsPath, "utf8")) as DeployedContracts;
   contractsConfig.tokens = deployedTokens;
   contractsConfig.lastDeployed = new Date().toISOString();
@@ -118,7 +118,7 @@ async function main() {
   console.log("=".repeat(60));
   console.log();
   console.log("💡 Next Steps:");
-  console.log("Deploy AMM core: npx hardhat run scripts/deploy-amm-core.ts --network moonbase");
+  console.log("Deploy AMM core: npx hardhat run scripts/deploy/deploy-amm-core.ts --network moonbase");
   console.log();
 }
 

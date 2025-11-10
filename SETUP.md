@@ -97,7 +97,7 @@ The deployment script automatically:
 After deployment, add liquidity to enable swaps:
 
 ```bash
-npx hardhat run scripts/addLiquidity.ts --network moonbase
+npx hardhat run scripts/liquidity/addLiquidity.ts --network moonbase
 ```
 
 This will:

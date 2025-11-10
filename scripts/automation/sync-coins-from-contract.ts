@@ -1,9 +1,9 @@
 import { ethers } from "hardhat";
 import * as fs from "fs";
 import * as path from "path";
-import halaCoinsConfig from "../config/halaCoins.json";
-import deployedContractsConfig from "../config/deployedContracts.json";
-import { HalaCoinsConfig, DeployedContracts, HalaCoin } from "../config/types";
+import halaCoinsConfig from "../../config/halaCoins.json";
+import deployedContractsConfig from "../../config/deployedContracts.json";
+import { HalaCoinsConfig, DeployedContracts, HalaCoin } from "../../config/types";
 
 /**
  * Sync coins from ShariaCompliance contract to JSON config
@@ -18,7 +18,7 @@ import { HalaCoinsConfig, DeployedContracts, HalaCoin } from "../config/types";
  *    - Updates complianceReason from contract
  *    - Preserves addresses and other metadata
  * 
- * Usage: npx hardhat run scripts/sync-coins-from-contract.ts --network moonbase
+ * Usage: npx hardhat run scripts/automation/sync-coins-from-contract.ts --network moonbase
  */
 async function main() {
   const config = halaCoinsConfig as HalaCoinsConfig;
@@ -31,7 +31,7 @@ async function main() {
   if (!shariaComplianceAddress) {
     console.error("❌ Error: ShariaCompliance contract not found in deployedContracts.json!");
     console.log("\n📝 Please deploy contracts first:");
-    console.log("   npx hardhat run scripts/deploy-core.ts --network moonbase\n");
+    console.log("   npx hardhat run scripts/deploy/deploy-core.ts --network moonbase\n");
     process.exit(1);
   }
 
@@ -128,7 +128,7 @@ async function main() {
     },
   };
 
-  const configPath = path.join(__dirname, "..", "config", "halaCoins.json");
+  const configPath = path.join(__dirname, "..", "..", "config", "halaCoins.json");
   fs.writeFileSync(configPath, JSON.stringify(updatedConfig, null, 2) + "\n");
 
   console.log("=".repeat(60));

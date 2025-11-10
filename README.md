@@ -97,7 +97,7 @@ Automated Dollar Cost Averaging with local automation script.
 - **Any Token → Any Token DCA**: Deposit DEV, USDC, BTC, or any Sharia-compliant token and DCA into any other token
 - **Automatic Routing**: Uses the same routing logic as ShariaSwap (direct pairs or through USDC)
 - Token addresses are automatically queried from `ShariaCompliance` contract. No separate registration needed.
-- **Local Automation**: Run `scripts/auto-execute-dca.ts` to automatically execute orders
+- **Local Automation**: Run `scripts/automation/auto-execute-dca.ts` to automatically execute orders
 
 ## 🚀 Getting Started
 
@@ -133,7 +133,7 @@ This platform is designed for **Moonbase Alpha (testnet)** only:
 
 - ✅ Custom Uniswap V2-style AMM (SimpleRouter, SimplePair, SimpleFactory)
 - ✅ Mock ERC20 tokens (USDT, USDC, DAI) for testing
-- ✅ Manual liquidity provision via `scripts/addLiquidity.ts`
+- ✅ Manual liquidity provision via `scripts/liquidity/addLiquidity.ts`
 - ✅ Free testnet DEV tokens for testing
 - ✅ No real funds required
 
@@ -146,7 +146,7 @@ For detailed setup instructions, troubleshooting, and post-deployment steps, ref
 Debug failed transactions with the decode script:
 
 ```bash
-TX_HASH=0x... npx hardhat run scripts/decode-failed-tx.ts --network moonbase
+TX_HASH=0x... npx hardhat run scripts/diagnostics/decode-failed-tx.ts --network moonbase
 ```
 
 The script will:
@@ -165,7 +165,7 @@ For detailed usage, see [USAGE_EXAMPLES.md](./USAGE_EXAMPLES.md#debugging-failed
 
 1. **Add Liquidity** (required after deployment):
    ```bash
-   npx hardhat run scripts/addLiquidity.ts --network moonbase
+   npx hardhat run scripts/liquidity/addLiquidity.ts --network moonbase
    ```
 
 2. **Access Deployed Addresses**:

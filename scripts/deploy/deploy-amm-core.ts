@@ -1,9 +1,9 @@
 import { ethers } from "hardhat";
 import * as fs from "fs";
 import * as path from "path";
-import deployedContractsConfig from "../config/deployedContracts.json";
-import { DeployedContracts } from "../config/types";
-import { deployOrVerifyContract } from "./utils/deployHelpers";
+import deployedContractsConfig from "../../config/deployedContracts.json";
+import { DeployedContracts } from "../../config/types";
+import { deployOrVerifyContract } from "../utils/deployHelpers";
 
 /**
  * Deploy AMM Core Infrastructure (Factory and Router)
@@ -57,7 +57,7 @@ async function main() {
   // Update deployedContracts.json with AMM addresses
   // ============================================================================
   console.log("📝 Updating deployedContracts.json with AMM addresses...");
-  const contractsPath = path.join(__dirname, "..", "config", "deployedContracts.json");
+  const contractsPath = path.join(__dirname, "..", "..", "config", "deployedContracts.json");
   const existingPairsConfig = deployedContractsConfig as DeployedContracts;
 
   const updatedContracts = {
@@ -93,7 +93,7 @@ async function main() {
   console.log("=".repeat(60));
   console.log();
   console.log("💡 Next Steps:");
-  console.log("Create pairs: npx hardhat run scripts/create-pairs.ts --network moonbase");
+  console.log("Create pairs: npx hardhat run scripts/deploy/create-pairs.ts --network moonbase");
   console.log();
 }
 

@@ -11,7 +11,12 @@
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "moduleResolution": "node",
-    "types": ["node"]
+    "types": [
+      "node",
+      "hardhat",
+      "@nomicfoundation/hardhat-ethers",
+      "@nomicfoundation/hardhat-chai-matchers"
+    ]
   },
   "include": ["./scripts", "./test", "./typechain-types"],
   "exclude": ["node_modules"]
