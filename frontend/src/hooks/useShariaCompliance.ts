@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import type { Address } from "viem";
 import { useReadContract } from "wagmi";
 import { ShariaComplianceABI } from "../config/abis";
-import deployedContracts from "../config/deployedContracts.json";
+import deployedContracts from "../../../config/deployedContracts.json";
 
 const SHARIA_COMPLIANCE_ADDRESS = (
 	deployedContracts as unknown as { main: { shariaCompliance: string } }
@@ -25,7 +25,7 @@ export interface ShariaCoin {
  * Refactored compliance hook using Wagmi v2 + Viem
  * Replaces the old useShariaCompliance hook
  */
-export function useShariaComplianceViem() {
+export function useShariaCompliance() {
 	// Get all Sharia-compliant coins
 	const {
 		data: coinsRaw,

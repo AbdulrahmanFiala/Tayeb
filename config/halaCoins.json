@@ -4,6 +4,7 @@
       "symbol": "BTC",
       "name": "Bitcoin",
       "decimals": 8,
+      "avgSlippagePercent": 1.0,
       "complianceReason": "Decentralized cryptocurrency, no interest-bearing mechanism",
       "description": "Leading decentralized cryptocurrency",
       "addresses": {
@@ -15,6 +16,7 @@
       "symbol": "ETH",
       "name": "Ethereum",
       "decimals": 18,
+      "avgSlippagePercent": 1.0,
       "complianceReason": "Smart contract platform, utility token",
       "description": "Decentralized smart contract platform",
       "addresses": {
@@ -26,6 +28,7 @@
       "symbol": "USDT",
       "name": "Tether USD",
       "decimals": 6,
+      "avgSlippagePercent": 0.3,
       "complianceReason": "Stablecoin backed by fiat reserves",
       "description": "USD-pegged stablecoin",
       "addresses": {
@@ -37,6 +40,7 @@
       "symbol": "XRP",
       "name": "Ripple",
       "decimals": 6,
+      "avgSlippagePercent": 1.5,
       "complianceReason": "Digital payment protocol token",
       "description": "Fast and low-cost cross-border payments",
       "addresses": {
@@ -48,6 +52,7 @@
       "symbol": "BNB",
       "name": "Binance Coin",
       "decimals": 18,
+      "avgSlippagePercent": 1.0,
       "complianceReason": "Utility token for Binance ecosystem",
       "description": "Native token of Binance exchange and BNB Chain",
       "addresses": {
@@ -59,6 +64,7 @@
       "symbol": "SOL",
       "name": "Solana",
       "decimals": 9,
+      "avgSlippagePercent": 1.5,
       "complianceReason": "High-performance blockchain utility token",
       "description": "High-speed blockchain platform",
       "addresses": {
@@ -70,6 +76,7 @@
       "symbol": "USDC",
       "name": "USD Coin",
       "decimals": 6,
+      "avgSlippagePercent": 0.3,
       "complianceReason": "Fully reserved stablecoin",
       "description": "Fully-backed USD stablecoin",
       "addresses": {
@@ -81,6 +88,7 @@
       "symbol": "TRX",
       "name": "TRON",
       "decimals": 18,
+      "avgSlippagePercent": 2.0,
       "complianceReason": "Decentralized content platform token",
       "description": "Decentralized entertainment and content-sharing platform",
       "addresses": {
@@ -92,6 +100,7 @@
       "symbol": "ADA",
       "name": "Cardano",
       "decimals": 6,
+      "avgSlippagePercent": 1.5,
       "complianceReason": "Proof-of-stake blockchain platform token",
       "description": "Research-driven blockchain platform",
       "addresses": {
@@ -103,6 +112,7 @@
       "symbol": "LINK",
       "name": "Chainlink",
       "decimals": 18,
+      "avgSlippagePercent": 1.5,
       "complianceReason": "Oracle network utility token",
       "description": "Decentralized oracle network",
       "addresses": {
@@ -114,6 +124,7 @@
       "symbol": "BCH",
       "name": "Bitcoin Cash",
       "decimals": 8,
+      "avgSlippagePercent": 1.0,
       "complianceReason": "Peer-to-peer electronic cash, no interest-bearing",
       "description": "Bitcoin fork focused on fast, low-cost payments",
       "addresses": {
@@ -125,6 +136,7 @@
       "symbol": "LEO",
       "name": "UNUS SED LEO",
       "decimals": 18,
+      "avgSlippagePercent": 2.0,
       "complianceReason": "Utility token for iFinex ecosystem",
       "description": "Utility token for Bitfinex and iFinex services",
       "addresses": {
@@ -136,6 +148,7 @@
       "symbol": "XLM",
       "name": "Stellar",
       "decimals": 7,
+      "avgSlippagePercent": 1.5,
       "complianceReason": "Cross-border payment network token",
       "description": "Open network for cross-border payments",
       "addresses": {
@@ -147,6 +160,7 @@
       "symbol": "SUI",
       "name": "Sui",
       "decimals": 9,
+      "avgSlippagePercent": 2.0,
       "complianceReason": "Layer 1 blockchain utility token",
       "description": "Next-generation smart contract platform",
       "addresses": {
@@ -158,6 +172,7 @@
       "symbol": "HBAR",
       "name": "Hedera",
       "decimals": 8,
+      "avgSlippagePercent": 2.0,
       "complianceReason": "Public distributed ledger utility token",
       "description": "Enterprise-grade distributed ledger",
       "addresses": {
@@ -169,6 +184,7 @@
       "symbol": "AVAX",
       "name": "Avalanche",
       "decimals": 18,
+      "avgSlippagePercent": 1.5,
       "complianceReason": "Proof-of-stake blockchain platform token",
       "description": "Highly scalable smart contract platform",
       "addresses": {
@@ -182,8 +198,8 @@
     "USDC"
   ],
   "metadata": {
-    "version": "1.0.0",
-    "lastUpdated": "2025-11-06T01:39:22.413Z",
+    "version": "1.0.1",
+    "lastUpdated": "2025-11-11T13:54:00.000Z",
     "network": "moonbase"
   }
 }

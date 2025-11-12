@@ -8,6 +8,7 @@ export interface Token {
 		moonbase: string;
 	};
 	permissible: boolean;
+	avgSlippagePercent?: number;
 }
 
 export interface HalaCoin {

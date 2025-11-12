@@ -7,7 +7,8 @@ import {
 	useWriteContract,
 } from "wagmi";
 import { ERC20_ABI, ShariaSwapABI } from "../config/abis";
-import deployedContracts from "../config/deployedContracts.json";
+import deployedContracts from "../../../config/deployedContracts.json";
+import { getTokenDecimals } from "../config/tokenDecimals";
 
 const SHARIA_SWAP_ADDRESS = (
 	deployedContracts as unknown as { main: { shariaSwap: string } }
@@ -17,7 +18,7 @@ const SHARIA_SWAP_ADDRESS = (
  * Refactored swap hook using Wagmi v2 + Viem
  * Replaces the old useShariaSwap hook
  */
-export function useShariaSwapViem() {
+export function useShariaSwap() {
 	const { address: userAddress } = useAccount();
 	const { writeContract, isPending: isWriting } = useWriteContract();
 
@@ -112,7 +113,9 @@ export function useManualSwapQuote() {
 	const fetchQuote = async (
 		tokenIn: Address | `0x${string}`,
 		tokenOut: Address | `0x${string}`,
-		amountIn: bigint
+		amountIn: bigint,
+		tokenInSymbol?: string,
+		tokenOutSymbol?: string
 	): Promise<bigint | null> => {
 		if (!publicClient) {
 			console.error("❌ Public client not available");
@@ -147,11 +150,21 @@ export function useManualSwapQuote() {
 		try {
 			setIsLoading(true);
 
+			// ✅ Log decimals if symbols are provided
+			const decimalsIn = tokenInSymbol ? getTokenDecimals(tokenInSymbol) : 18;
+			const decimalsOut = tokenOutSymbol
+				? getTokenDecimals(tokenOutSymbol)
+				: 18;
+
 			console.log("📝 Fetching quote with params:", {
 				contract: SHARIA_SWAP_ADDRESS,
 				tokenIn,
 				tokenOut,
 				amountIn,
+				tokenInSymbol,
+				decimalsIn,
+				tokenOutSymbol,
+				decimalsOut,
 			});
 
 			// ✅ Direct contract read call

@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { CryptoTokenIcon } from "../components/CryptoTokenIcon";
-import { useShariaComplianceViem } from "../hooks/useShariaComplianceViem";
-import { useWalletViem } from "../hooks/useWalletViem";
+import { useShariaCompliance } from "../hooks/useShariaCompliance";
+import { useWallet } from "../hooks/useWallet";
 
 interface ShariaCoin {
 	id: string;
@@ -16,9 +16,9 @@ interface ShariaCoin {
 
 export function TokensPage() {
 	const navigate = useNavigate();
-	useWalletViem(); // Just to ensure wallet context
+	useWallet(); // Just to ensure wallet context
 
-	const { coins, coinsLoading } = useShariaComplianceViem();
+	const { coins, coinsLoading } = useShariaCompliance();
 
 	const [searchTerm, setSearchTerm] = useState("");
 	const [sortBy, setSortBy] = useState<"name" | "price" | "change">("name");
@@ -287,7 +287,9 @@ export function TokensPage() {
 													</td>
 													<td className='h-[72px] px-4 py-2 text-right'>
 														<button
-															onClick={() => navigate("/swap")}
+															onClick={() =>
+																navigate(`/swap?tokenIn=${token.symbol}`)
+															}
 															className='bg-primary/20 text-primary hover:bg-primary hover:text-background-dark transition-colors duration-200 font-bold text-sm h-9 px-4 rounded-lg'
 														>
 															Swap
@@ -346,7 +348,7 @@ export function TokensPage() {
 											</div>
 										</div>
 										<button
-											onClick={() => navigate("/swap")}
+											onClick={() => navigate(`/swap?tokenIn=${token.symbol}`)}
 											className='w-full bg-primary text-background-dark hover:opacity-90 transition-opacity font-bold text-sm h-10 px-4 rounded-lg'
 										>
 											Swap

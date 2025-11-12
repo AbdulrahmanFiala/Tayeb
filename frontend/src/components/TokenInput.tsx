@@ -6,7 +6,6 @@ interface TokenInputProps {
 	onChange?: (value: string) => void;
 	readOnly?: boolean;
 	token: Token | null;
-	balance?: string;
 	placeholder?: string;
 	tokens?: Token[];
 	onTokenChange?: (token: Token) => void;
@@ -18,20 +17,19 @@ export function TokenInput({
 	onChange,
 	readOnly = false,
 	token,
-	balance = "0.00",
-	placeholder = "0.0",
+	placeholder = "0.00000",
 	tokens = [],
 	onTokenChange,
 }: TokenInputProps) {
 	return (
-		<div className='bg-[#23483c] rounded-lg p-4'>
+		<div className='bg-[#23483c] rounded-lg p-4 my-2'>
 			{/* Label and Balance */}
 			<div className='flex justify-between items-center mb-2'>
 				<p className='text-white/80 text-sm font-medium leading-normal'>
 					{label}
 				</p>
 				<p className='text-white/60 text-sm font-medium leading-normal'>
-					Balance: {balance}
+					Balance: {value ? value : 0} {token?.symbol}
 				</p>
 			</div>
 
@@ -63,7 +61,6 @@ export function TokenInput({
 						SELECT TOKEN
 					</option>
 					{tokens.map((t) => {
-						// console.log(t);
 						return (
 							<option
 								key={t.addresses.moonbase}

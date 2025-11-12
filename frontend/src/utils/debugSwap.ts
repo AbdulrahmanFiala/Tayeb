@@ -16,7 +16,7 @@ const SHARIA_SWAP_ADDRESS: Address =
 
 const publicClient = createPublicClient({
 	chain: moonbaseAlpha,
-	transport: http("https://rpc.testnet.moonbeam.network"),
+	transport: http("https://rpc.api.moonbase.moonbeam.network"),
 });
 
 /**

@@ -2,6 +2,8 @@ import { Route, Routes } from "react-router";
 import "./App.css";
 import { NavBar } from "./components/NavBar";
 import { AboutPage } from "./pages/AboutPage";
+import { DCANewOrderPage } from "./pages/DCANewOrderPage";
+import { DCAOrdersPage } from "./pages/DCAOrdersPage";
 import { HomePage } from "./pages/HomePage";
 import { SwapPage } from "./pages/SwapPage";
 import { TokensPage } from "./pages/TokensPage";
@@ -14,6 +16,8 @@ function App() {
 				<Route path='/' element={<HomePage />} />
 				<Route path='/swap' element={<SwapPage />} />
 				<Route path='/tokens' element={<TokensPage />} />
+				<Route path='/dca' element={<DCAOrdersPage />} />
+				<Route path='/dca/new' element={<DCANewOrderPage />} />
 				<Route path='/about' element={<AboutPage />} />
 			</Routes>
 		</div>

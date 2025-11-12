@@ -1,9 +1,8 @@
 import { useNavigate } from "react-router";
-import { useWalletViem } from "../hooks/useWalletViem";
+import { useWallet } from "../hooks/useWallet";
 
 export const NavBar: React.FC = () => {
-	const { address, isConnected, connectWallet, disconnectWallet } =
-		useWalletViem();
+	const { address, isConnected, connectWallet, disconnectWallet } = useWallet();
 	const navigate = useNavigate();
 
 	const shortenAddress = (addr: string) => {
@@ -47,6 +46,12 @@ export const NavBar: React.FC = () => {
 						className='text-white/70 text-base font-medium leading-normal hover:text-primary transition-colors bg-transparent border-transparent hover:border-transparent hover:border-b-2 hover:outline-0 focus:outline-none'
 					>
 						Swap
+					</button>
+					<button
+						onClick={() => navigate("/dca")}
+						className='text-white/70 text-base font-medium leading-normal hover:text-primary transition-colors bg-transparent border-transparent hover:border-transparent hover:border-b-2 hover:outline-0 focus:outline-none'
+					>
+						DCA
 					</button>
 					<button
 						onClick={() => navigate("/about")}

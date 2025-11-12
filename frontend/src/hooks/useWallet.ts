@@ -12,7 +12,7 @@ import { injected } from "wagmi/connectors";
  * Refactored wallet hook using Wagmi v2
  * Replaces the old ethers-based useWallet hook
  */
-export function useWalletViem() {
+export function useWallet() {
 	const { address, isConnected, chain } = useAccount();
 	const chainId = useChainId();
 	const { switchChain } = useSwitchChain();

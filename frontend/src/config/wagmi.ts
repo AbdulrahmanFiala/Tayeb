@@ -7,7 +7,7 @@ export const wagmiConfig = getDefaultConfig({
 	projectId: "your-walletconnect-project-id", // Get from WalletConnect Cloud
 	chains: [moonbaseAlpha],
 	transports: {
-		[moonbaseAlpha.id]: http("https://rpc.testnet.moonbeam.network"),
+		[moonbaseAlpha.id]: http("https://rpc.api.moonbase.moonbeam.network"),
 	},
 });
 
