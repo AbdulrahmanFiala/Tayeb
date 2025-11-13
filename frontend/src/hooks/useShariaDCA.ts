@@ -5,6 +5,7 @@ import {
 	useReadContract,
 	useReadContracts,
 	useWriteContract,
+	useWaitForTransactionReceipt,
 } from "wagmi";
 import { ERC20_ABI, ShariaDCAABI } from "../config/abis";
 import deployedContracts from "../../../config/deployedContracts.json";
@@ -36,10 +37,26 @@ export interface DCAOrder {
  */
 export function useShariaDCA() {
 	const { address: userAddress } = useAccount();
-	const { writeContract, isPending: isWriting } = useWriteContract();
+	const { 
+		writeContract, 
+		isPending: isWriting,
+		data: txHash,
+		error: writeError,
+		reset: resetWrite,
+	} = useWriteContract();
+
+	// Wait for transaction confirmation
+	const {
+		isLoading: isConfirming,
+		isSuccess: isConfirmed,
+		isError: isConfirmError,
+		error: confirmError,
+	} = useWaitForTransactionReceipt({
+		hash: txHash,
+	});
 
 	// Get user's order IDs
-	const { data: userOrderIds, isLoading: loadingOrderIds } = useReadContract({
+	const { data: userOrderIds, isLoading: loadingOrderIds, refetch: refetchUserOrders } = useReadContract({
 		address: SHARIA_DCA_ADDRESS,
 		abi: ShariaDCAABI,
 		functionName: "getUserOrders",
@@ -134,9 +151,17 @@ export function useShariaDCA() {
 		cancelDCAOrder,
 		userOrderIds: (userOrderIds as bigint[]) || [],
 		loadingOrderIds,
+		refetchUserOrders,
 		isCreating: isWriting,
 		isExecuting: isWriting,
 		isCancelling: isWriting,
+		isApproving: isWriting,
+		isConfirming,
+		isConfirmed,
+		txHash,
+		writeError,
+		confirmError,
+		resetWrite,
 		SHARIA_DCA_ADDRESS,
 	};
 }
@@ -177,7 +202,7 @@ export function useDCAOrders(orderIds: bigint[] | undefined) {
 		}));
 	}, [orderIds]);
 
-	const { data: ordersData, isLoading } = useReadContracts({
+	const { data: ordersData, isLoading, refetch: refetchOrders } = useReadContracts({
 		contracts,
 		query: {
 			enabled: !!orderIds && orderIds.length > 0,
@@ -201,6 +226,7 @@ export function useDCAOrders(orderIds: bigint[] | undefined) {
 	return {
 		orders,
 		isLoading,
+		refetchOrders,
 	};
 }
 

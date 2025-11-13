@@ -246,7 +246,10 @@ export function TokensPage() {
 															className='flex items-center gap-2'
 															title={token.tokenAddress}
 														>
-															<CryptoTokenIcon className='w-8 h-8' />
+															<CryptoTokenIcon 
+																symbol={token.symbol}
+																className='w-8 h-8' 
+															/>
 															<div>
 																<p className='font-medium'>{token.symbol}</p>
 																<p className='text-xs text-white/60'>
@@ -315,11 +318,17 @@ export function TokensPage() {
 										className='bg-[#19332b] p-4 rounded-xl border border-[#326755] space-y-4 hover:border-primary/50 transition-all duration-300'
 									>
 										<div className='flex justify-between items-start'>
-											<div>
-												<h3 className='text-white font-bold text-lg'>
-													{token.name}
-												</h3>
-												<p className='text-[#92c9b7] text-sm'>{token.symbol}</p>
+											<div className='flex items-center gap-3'>
+												<CryptoTokenIcon 
+													symbol={token.symbol}
+													className='w-10 h-10' 
+												/>
+												<div>
+													<h3 className='text-white font-bold text-lg'>
+														{token.name}
+													</h3>
+													<p className='text-[#92c9b7] text-sm'>{token.symbol}</p>
+												</div>
 											</div>
 											<div className='flex items-center gap-2 text-xs font-medium text-green-400 bg-green-500/10 rounded-full px-3 py-1'>
 												<span className='material-symbols-outlined text-sm'>

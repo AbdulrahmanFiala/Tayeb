@@ -11,6 +11,7 @@ import { ERC20_ABI, ShariaSwapABI } from "../config/abis";
 import deployedContracts from "../../../config/deployedContracts.json";
 import { getTokenDecimals } from "../config/tokenDecimals";
 import type { TransactionStatus } from "../types";
+import { getFriendlyErrorMessage, isUserRejection } from "../utils/errorMessages";
 
 const SHARIA_SWAP_ADDRESS = (
 	deployedContracts as unknown as { main: { shariaSwap: string } }
@@ -121,6 +122,11 @@ export function useShariaSwap() {
 		});
 	};
 
+	// Get friendly error message
+	const rawError = writeError || confirmError;
+	const friendlyErrorMessage = rawError ? getFriendlyErrorMessage(rawError) : null;
+	const isRejection = rawError ? isUserRejection(rawError) : false;
+
 	return {
 		approveToken,
 		swapTokenForToken,
@@ -133,7 +139,9 @@ export function useShariaSwap() {
 		isConfirmed,
 		txHash,
 		transactionStatus: getTransactionStatus(),
-		error: writeError || confirmError,
+		error: rawError,
+		errorMessage: friendlyErrorMessage,
+		isUserRejection: isRejection,
 		reset: resetWrite,
 		SHARIA_SWAP_ADDRESS,
 	};

@@ -1,207 +1,330 @@
-import { useNavigate } from "react-router";
+import { useMemo, useState, useEffect } from "react";
+import { parseUnits } from "viem";
+import type { Address } from "viem";
+import { DCAOrdersList } from "../components/DCAOrdersList";
+import { DCATradeForm } from "../components/DCATradeForm";
+import { useShariaCompliance } from "../hooks/useShariaCompliance";
+import { useShariaDCA, useDCAOrders } from "../hooks/useShariaDCA";
+import { useWallet } from "../hooks/useWallet";
+import { TransactionNotificationList } from "../components/TransactionNotification";
+import { getFriendlyErrorMessage, isUserRejection } from "../utils/errorMessages";
+import halaCoinsData from "../../../config/halaCoins.json";
+import type { Token, TransactionNotification } from "../types";
 
 export const DCAOrdersPage: React.FC = () => {
-	const navigate = useNavigate();
+	const { coins, coinsLoading, coinsError } = useShariaCompliance();
+	const { address, isConnected } = useWallet();
+	
+	// DCA hooks
+	const {
+		createDCAOrderWithToken,
+		approveToken,
+		cancelDCAOrder,
+		userOrderIds,
+		loadingOrderIds,
+		refetchUserOrders,
+		isCreating,
+		isApproving,
+		isConfirming,
+		isConfirmed,
+		txHash,
+		writeError,
+		confirmError,
+		resetWrite,
+	} = useShariaDCA();
+	
+	const { orders, isLoading: loadingOrders, refetchOrders } = useDCAOrders(userOrderIds);
+
+	// State management
+	const [notifications, setNotifications] = useState<TransactionNotification[]>([]);
+	const [currentTxId, setCurrentTxId] = useState<string | null>(null);
+	const [approvalConfirmed, setApprovalConfirmed] = useState<number>(0);
+	
+	// Track if we're currently in an approval transaction
+	const isApprovalInProgress = useMemo(() => {
+		return (isApproving || isConfirming) && currentTxId?.startsWith("dca-approve-") === true;
+	}, [isApproving, isConfirming, currentTxId]);
+
+	// Format tokens: merge smart contract data with halaCoins.json metadata
+	const tokens: Token[] = useMemo(() => {
+		return (coins || []).map((coin) => {
+			const halaCoins = (
+				halaCoinsData as {
+					coins: Array<{
+						symbol: string;
+						decimals: number;
+						avgSlippagePercent: number;
+					}>;
+				}
+			).coins;
+			const coinMetadata = halaCoins.find(
+				(c: { symbol: string; decimals: number; avgSlippagePercent: number }) =>
+					c.symbol.toLowerCase() === coin.symbol.toLowerCase()
+			);
+
+			return {
+				symbol: coin.symbol,
+				name: coin.name,
+				decimals: coinMetadata?.decimals ?? 18,
+				description: coin.complianceReason,
+				complianceReason: coin.complianceReason,
+				addresses: { moonbase: coin.tokenAddress },
+				permissible: coin.verified,
+				avgSlippagePercent: coinMetadata?.avgSlippagePercent,
+			};
+		});
+	}, [coins]);
+
+	// Handle DCA scheduling (called when user clicks schedule button)
+	const handleScheduleDCA = async (data: {
+		sourceToken: Token;
+		targetToken: Token;
+		amount: string;
+		interval: "hour" | "day" | "week";
+		duration: string;
+	}) => {
+		if (!isConnected || !address) {
+			alert("Please connect your wallet first");
+			return;
+		}
+
+		// Create the order (allowance is already checked in the form)
+		await createOrder(data);
+	};
+
+	// Handle token approval (called from form)
+	const handleApproveToken = async (token: Token, amount: bigint) => {
+		if (!address) return;
+
+		const txId = `dca-approve-${Date.now()}`;
+		setCurrentTxId(txId);
+
+		// Create approval notification
+		const approvalNotification: TransactionNotification = {
+			id: txId,
+			status: "pending",
+			type: "approve",
+			message: `Approving ${token.symbol}...`,
+		};
+		setNotifications((prev) => [...prev, approvalNotification]);
+
+		// Approve token (errors will be handled by effects)
+		approveToken(token.addresses.moonbase as Address, amount);
+	};
+
+	// Create DCA order
+	const createOrder = async (data: {
+		sourceToken: Token;
+		targetToken: Token;
+		amount: string;
+		interval: "hour" | "day" | "week";
+		duration: string;
+	}) => {
+		const txId = `dca-create-${Date.now()}`;
+		setCurrentTxId(txId);
+
+		// Add notification
+		setNotifications((prev) => [
+			...prev,
+			{
+				id: txId,
+				status: "pending",
+				type: "approve",
+				message: "Creating DCA order...",
+			},
+		]);
+
+		// Parse values
+		const amountPerInterval = parseUnits(data.amount, data.sourceToken.decimals);
+		const totalIntervals = BigInt(data.duration);
+		const intervalSeconds = 
+			data.interval === "hour" ? BigInt(3600) :
+			data.interval === "day" ? BigInt(86400) :
+			BigInt(604800); // week
+
+		// Create order (errors will be handled by effects)
+		createDCAOrderWithToken(
+			data.sourceToken.addresses.moonbase as Address,
+			data.targetToken.addresses.moonbase as Address,
+			amountPerInterval,
+			intervalSeconds,
+			totalIntervals
+		);
+	};
+
+
+	// Handle order cancellation
+	const handleCancelOrder = async (orderId: bigint) => {
+		if (!confirm("Are you sure you want to cancel this DCA order?")) return;
+
+		const txId = `dca-cancel-${Date.now()}`;
+		setCurrentTxId(txId);
+
+		setNotifications((prev) => [
+			...prev,
+			{
+				id: txId,
+				status: "pending",
+				type: "approve",
+				message: "Cancelling DCA order...",
+			},
+		]);
+
+		// Cancel order (errors will be handled by effects)
+		cancelDCAOrder(orderId);
+	};
+
+	// Track transaction confirmation
+	useEffect(() => {
+		if (isConfirmed && currentTxId) {
+			console.log("✅ Transaction CONFIRMED! Updating notification to SUCCESS", { currentTxId });
+			
+			const isApprovalTx = currentTxId.startsWith("dca-approve-");
+			const isCreateTx = currentTxId.startsWith("dca-create-");
+			const isCancelTx = currentTxId.startsWith("dca-cancel-");
+			
+			setNotifications((prev) =>
+				prev.map((n) =>
+					n.id === currentTxId
+						? { ...n, status: "success" as const }
+						: n
+				)
+			);
+
+			// If approval is confirmed, trigger form to re-check allowance
+			if (isApprovalTx) {
+				console.log("✅ Approval confirmed - triggering form to re-check allowance");
+				setApprovalConfirmed((prev) => prev + 1);
+			}
+
+			// If order is created or cancelled, refetch user orders and order details
+			if (isCreateTx || isCancelTx) {
+				console.log("✅ Order transaction confirmed - refetching user orders");
+				// Wait a bit for blockchain state to update, then refetch
+				setTimeout(async () => {
+					// Refetch order IDs first
+					await refetchUserOrders();
+					// Then refetch order details (contracts will also auto-update when userOrderIds changes)
+					refetchOrders();
+				}, 1000);
+			}
+
+			// Reset transaction ID after a delay
+			setTimeout(() => {
+				console.log("🔄 Resetting transaction state");
+				setCurrentTxId(null);
+				resetWrite();
+			}, 2000);
+		}
+	}, [isConfirmed, currentTxId, resetWrite, refetchUserOrders, refetchOrders]);
+
+	// Track transaction hash
+	useEffect(() => {
+		if (txHash && currentTxId) {
+			console.log("📝 Transaction hash available:", txHash);
+			setNotifications((prev) =>
+				prev.map((n) =>
+					n.id === currentTxId
+						? { ...n, txHash }
+						: n
+				)
+			);
+		}
+	}, [txHash, currentTxId]);
+
+	// Track errors
+	useEffect(() => {
+		const error = writeError || confirmError;
+		if (error && currentTxId) {
+			const isRejection = isUserRejection(error);
+			const friendlyMessage = getFriendlyErrorMessage(error);
+			
+			if (isRejection) {
+				// User rejection - just remove the notification without showing error
+				console.log("❌ User rejected transaction");
+				setNotifications((prev) =>
+					prev.filter((n) => n.id !== currentTxId)
+				);
+				setCurrentTxId(null);
+			} else {
+				// Real error - update notification to error
+				console.log("❌ Transaction ERROR:", friendlyMessage);
+				setNotifications((prev) =>
+					prev.map((n) =>
+						n.id === currentTxId && n.status !== "error"
+							? { ...n, status: "error", message: friendlyMessage }
+							: n
+					)
+				);
+				setCurrentTxId(null);
+			}
+		}
+	}, [writeError, confirmError, currentTxId]);
+
+	// Handle notification dismissal
+	const handleDismissNotification = (id: string) => {
+		setNotifications((prev) => prev.filter((n) => n.id !== id));
+	};
 
 	return (
-		<main className='flex-1 w-full max-w-7xl mx-auto px-4 sm:px-8 lg:px-10 py-10 sm:py-16'>
-			<section className='text-center mb-16'>
-				<h1 className='text-4xl sm:text-5xl font-bold mb-4 tracking-tight'>
-					Automate Your Crypto Investments
-				</h1>
-				<p className='text-lg text-white/70 max-w-2xl mx-auto mb-8'>
-					Set up recurring token purchases with our Dollar Cost Averaging (DCA)
-					tool. Invest consistently and grow your portfolio over time.
-				</p>
-				<button
-					className='flex min-w-[84px] mx-auto cursor-pointer items-center justify-center overflow-hidden rounded-xl h-12 px-6 bg-primary text-background-dark text-lg font-bold leading-normal tracking-wide hover:opacity-90 transition-opacity'
-					onClick={() => navigate("/dca/new")}
-				>
-					<span className='truncate'>Create DCA Order</span>
-				</button>
-			</section>
-			<section className='mb-16'>
-				<h2 className='text-3xl font-bold mb-8'>Active Orders</h2>
-				<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
-					<div className='bg-surface rounded-xl p-6 border border-white/10 flex flex-col gap-5'>
-						<div className='flex justify-between items-start'>
-							<div className='flex items-center gap-3'>
-								<span className='font-bold text-xl'>ETH → WBTC</span>
-							</div>
-							<span className='text-sm bg-background-dark/50 text-accent/80 px-2.5 py-1 rounded-full'>
-								Weekly
-							</span>
+		<main className='flex flex-1 justify-center py-10 sm:py-16 px-4'>
+			<div className='w-full max-w-7xl'>
+				{/* Loading State */}
+				{coinsLoading && (
+					<div className='mb-4 p-4 bg-blue-500/10 border border-blue-500 rounded-lg text-blue-500 text-sm text-center'>
+						Loading tokens from smart contract...
+					</div>
+				)}
+
+				{/* Token Error State */}
+				{coinsError && (
+					<div className='mb-4 p-4 bg-red-500/10 border border-red-500 rounded-lg text-red-500 text-sm'>
+						Error: {coinsError.message || "Failed to load tokens"}
+					</div>
+				)}
+
+
+				{/* Main Two-Column Layout */}
+				{!coinsLoading && !coinsError && tokens.length > 0 && (
+					<div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
+						{/* Left Column: Orders List */}
+						<div className='order-2 lg:order-1'>
+							<DCAOrdersList 
+								orders={orders}
+								tokens={tokens}
+								isLoading={loadingOrders || loadingOrderIds}
+								onCancelOrder={handleCancelOrder}
+							/>
 						</div>
-						<div>
-							<div className='flex justify-between text-sm text-white/70 mb-1'>
-								<span>Progress</span>
-								<span>8 / 24</span>
-							</div>
-							<div className='w-full bg-background-dark rounded-full h-2'>
-								<div
-									className='bg-accent h-2 rounded-full'
-									style={{ width: "33%" }}
-								></div>
-							</div>
-						</div>
-						<div className='grid grid-cols-2 gap-4 text-sm'>
-							<div>
-								<p className='text-white/60 mb-1'>Total Invested</p>
-								<p className='font-medium'>2.0 ETH</p>
-							</div>
-							<div>
-								<p className='text-white/60 mb-1'>Next Execution</p>
-								<p className='font-medium'>in 3d 14h 22m</p>
-							</div>
-						</div>
-						<div className='flex gap-4 pt-2 border-t border-white/10'>
-							<button className='flex-1 text-center py-2.5 rounded-lg bg-[#23483c] text-white font-bold rounded-lg hover:bg-[#2c5a4b] transition-colors'>
-								View Details
-							</button>
-							<button className='flex-1 text-center py-2.5 rounded-lg border border-red-500/50 text-red-400 hover:bg-red-500/10 transition-colors text-sm font-semibold'>
-								Cancel Order
-							</button>
+
+						{/* Right Column: DCA Trade Form */}
+						<div className='order-1 lg:order-2'>
+							<DCATradeForm 
+								tokens={tokens} 
+								onSchedule={handleScheduleDCA}
+								onApprove={handleApproveToken}
+								isCreating={isCreating}
+								isApproving={isApprovalInProgress}
+								approvalConfirmed={approvalConfirmed}
+							/>
 						</div>
 					</div>
-					<button
-						className='bg-surface rounded-xl p-6 border  border-dashed focus:outline-none border-white/20 flex flex-col items-center justify-center bg-transparent text-white/50 hover:bg-white/5 hover:border-white/30 transition-all'
-						onClick={() => navigate("/dca/new")}
-					>
-						<span
-							className='material-symbols-outlined mb-2'
-							style={{ fontSize: "32px" }}
-						>
-							add_circle
-						</span>
-						<span className='font-semibold'>Create New Order</span>
-					</button>
-				</div>
-			</section>
-			<section>
-				<div className='flex flex-wrap items-center justify-between gap-4 mb-8'>
-					<h2 className='text-3xl font-bold'>Order History</h2>
-				</div>
-				<div className='hidden lg:block bg-surface rounded-xl border border-white/10 overflow-hidden'>
-					<table className='w-full text-left'>
-						<thead className='bg-background-dark/50 text-xs text-white/60 uppercase tracking-wider'>
-							<tr>
-								<th className='p-4 font-medium'>Pair</th>
-								<th className='p-4 font-medium'>Amount</th>
-								<th className='p-4 font-medium'>Interval</th>
-								<th className='p-4 font-medium'>Total Invested</th>
-								<th className='p-4 font-medium'>Completed Date</th>
-								<th className='p-4 font-medium'>Status</th>
-							</tr>
-						</thead>
-						<tbody className='text-sm divide-y divide-white/10'>
-							<tr>
-								<td className='p-4 font-medium'>ETH → WBTC</td>
-								<td className='p-4 text-white/80'>0.05 ETH</td>
-								<td className='p-4 text-white/80'>Weekly</td>
-								<td className='p-4 text-white/80'>1.2 ETH</td>
-								<td className='p-4 text-white/80'>2023-11-20</td>
-								<td className='p-4'>
-									<span className='bg-green-500/20 text-green-300 text-xs font-semibold px-2.5 py-1 rounded-full'>
-										Completed
-									</span>
-								</td>
-							</tr>
-							<tr>
-								<td className='p-4 font-medium'>USDC → SHARIA</td>
-								<td className='p-4 text-white/80'>100 USDC</td>
-								<td className='p-4 text-white/80'>Bi-Weekly</td>
-								<td className='p-4 text-white/80'>600 USDC</td>
-								<td className='p-4 text-white/80'>2023-10-15</td>
-								<td className='p-4'>
-									<span className='bg-green-500/20 text-green-300 text-xs font-semibold px-2.5 py-1 rounded-full'>
-										Completed
-									</span>
-								</td>
-							</tr>
-							<tr>
-								<td className='p-4 font-medium'>ETH → USDC</td>
-								<td className='p-4 text-white/80'>0.1 ETH</td>
-								<td className='p-4 text-white/80'>Monthly</td>
-								<td className='p-4 text-white/80'>0.5 ETH</td>
-								<td className='p-4 text-white/80'>2023-09-01</td>
-								<td className='p-4'>
-									<span className='bg-red-500/20 text-red-400 text-xs font-semibold px-2.5 py-1 rounded-full'>
-										Cancelled
-									</span>
-								</td>
-							</tr>
-						</tbody>
-					</table>
-				</div>
-				<div className='lg:hidden space-y-4'>
-					<div className='bg-surface rounded-xl p-4 border border-white/10'>
-						<div className='flex justify-between items-center mb-3'>
-							<span className='font-bold'>ETH → WBTC</span>
-							<span className='bg-green-500/20 text-green-300 text-xs font-semibold px-2.5 py-1 rounded-full'>
-								Completed
-							</span>
-						</div>
-						<div className='text-sm space-y-2 text-white/80'>
-							<div className='flex justify-between'>
-								<span className='text-white/60'>Amount:</span>
-								<span>0.05 ETH</span>
-							</div>
-							<div className='flex justify-between'>
-								<span className='text-white/60'>Total Invested:</span>
-								<span>1.2 ETH</span>
-							</div>
-							<div className='flex justify-between'>
-								<span className='text-white/60'>Completed:</span>
-								<span>2023-11-20</span>
-							</div>
-						</div>
+				)}
+
+				{/* No tokens error message */}
+				{!coinsLoading && tokens.length === 0 && (
+					<div className='mb-4 p-4 bg-yellow-500/10 border border-yellow-500 rounded-lg text-yellow-500 text-sm text-center'>
+						No tokens available. Make sure you&apos;re connected to Moonbase
+						Alpha.
 					</div>
-					<div className='bg-surface rounded-xl p-4 border border-white/10'>
-						<div className='flex justify-between items-center mb-3'>
-							<span className='font-bold'>USDC → SHARIA</span>
-							<span className='bg-green-500/20 text-green-300 text-xs font-semibold px-2.5 py-1 rounded-full'>
-								Completed
-							</span>
-						</div>
-						<div className='text-sm space-y-2 text-white/80'>
-							<div className='flex justify-between'>
-								<span className='text-white/60'>Amount:</span>
-								<span>100 USDC</span>
-							</div>
-							<div className='flex justify-between'>
-								<span className='text-white/60'>Total Invested:</span>
-								<span>600 USDC</span>
-							</div>
-							<div className='flex justify-between'>
-								<span className='text-white/60'>Completed:</span>
-								<span>2023-10-15</span>
-							</div>
-						</div>
-					</div>
-					<div className='bg-surface rounded-xl p-4 border border-white/10'>
-						<div className='flex justify-between items-center mb-3'>
-							<span className='font-bold'>ETH → USDC</span>
-							<span className='bg-red-500/20 text-red-400 text-xs font-semibold px-2.5 py-1 rounded-full'>
-								Cancelled
-							</span>
-						</div>
-						<div className='text-sm space-y-2 text-white/80'>
-							<div className='flex justify-between'>
-								<span className='text-white/60'>Amount:</span>
-								<span>0.1 ETH</span>
-							</div>
-							<div className='flex justify-between'>
-								<span className='text-white/60'>Total Invested:</span>
-								<span>0.5 ETH</span>
-							</div>
-							<div className='flex justify-between'>
-								<span className='text-white/60'>Completed:</span>
-								<span>2023-09-01</span>
-							</div>
-						</div>
-					</div>
+				)}
 				</div>
-			</section>
+
+			{/* Transaction Notifications */}
+			<TransactionNotificationList
+				notifications={notifications}
+				onDismiss={handleDismissNotification}
+			/>
 		</main>
 	);
 };

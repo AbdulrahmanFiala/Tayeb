@@ -1,4 +1,5 @@
 import type { Token } from "../types";
+import { TokenSelector } from "./TokenSelector";
 
 interface TokenInputProps {
 	label: string;
@@ -64,33 +65,13 @@ export function TokenInput({
 				/>
 
 				{/* Token Select Dropdown */}
-				<select
-					value={token?.addresses.moonbase || ""}
-					onChange={(e) => {
-						const selectedToken = tokens.find(
-							(t) => t.addresses.moonbase === e.target.value
-						);
-						if (selectedToken && onTokenChange) {
-							onTokenChange(selectedToken);
-						}
-					}}
-					className='flex items-center gap-2 bg-[#10221c] hover:bg-[#0c1a16] transition-colors rounded-full px-4 py-2 pr-3 text-white font-bold text-lg cursor-pointer appearance-none border-none focus:outline-none focus:ring-2 focus:ring-primary/50'
-				>
-					<option value='' disabled hidden className='bg-[#23483c] text-white'>
-						SELECT TOKEN
-					</option>
-					{tokens.map((t) => {
-						return (
-							<option
-								key={t.addresses.moonbase}
-								value={t.addresses.moonbase}
-								className='bg-[#23483c] text-white hover:bg-primary hover:text-background-dark'
-							>
-								{t.symbol}
-							</option>
-						);
-					})}
-				</select>
+				{onTokenChange && (
+					<TokenSelector
+						selectedToken={token}
+						tokens={tokens}
+						onTokenChange={onTokenChange}
+					/>
+				)}
 			</div>
 		</div>
 	);

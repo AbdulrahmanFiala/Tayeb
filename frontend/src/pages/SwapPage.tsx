@@ -13,6 +13,7 @@ import { useTokenBalance } from "../hooks/useTokenBalance";
 import { useWallet } from "../hooks/useWallet";
 import type { Token, TransactionNotification, SwapConfirmationData } from "../types";
 import { ERC20_ABI } from "../config/abis";
+import { getFriendlyErrorMessage } from "../utils/errorMessages";
 
 export function SwapPage() {
 	const [searchParams] = useSearchParams();
@@ -27,6 +28,8 @@ export function SwapPage() {
 		txHash,
 		transactionStatus,
 		error: swapError,
+		errorMessage: swapErrorMessage,
+		isUserRejection: isSwapRejection,
 		reset: resetSwap,
 		SHARIA_SWAP_ADDRESS,
 	} = useShariaSwap();
@@ -262,43 +265,17 @@ export function SwapPage() {
 		}
 	};
 
-	// ✅ NEW: Fetch quote on token swap
-	// const swapTokens = async () => {
-	// 	// capture current values to avoid relying on state updates
-	// 	const currentIn = tokenIn;
-	// 	const currentOut = tokenOut;
-	// 	const currentAmountIn = amountIn;
-	// 	const currentAmountOut = amountOut;
-
-	// 	// swap UI state
-	// 	setTokenIn(currentOut);
-	// 	setTokenOut(currentIn);
-	// 	setAmountIn(currentAmountOut);
-	// 	setAmountOut(currentAmountIn);
-
-	// 	// Refetch quote for swapped tokens using captured values
-	// 	if ((currentAmountOut as number) > 0 && currentOut && currentIn) {
-	// 		const decimalsIn = currentOut.decimals ?? 18;
-	// 		const decimalsOut = currentIn.decimals ?? 18;
-
-	// 		const amountInWei = parseUnits(
-	// 			(currentAmountOut as number).toString(),
-	// 			decimalsIn
-	// 		);
-	// 		const quote = await fetchQuote(
-	// 			currentOut.addresses.moonbase as `0x${string}`,
-	// 			currentIn.addresses.moonbase as `0x${string}`,
-	// 			amountInWei,
-	// 			currentOut.symbol,
-	// 			currentIn.symbol
-	// 		);
-
-	// 		if (quote) {
-	// 			const formatted = Number(formatUnits(quote, decimalsOut));
-	// 			setAmountOut(formatted);
-	// 		}
-	// 	}
-	// };
+	// Swap tokens
+	const swapTokens = () => {
+		// Swap the tokens
+		const tempToken = tokenIn;
+		setTokenIn(tokenOut);
+		setTokenOut(tempToken);
+		
+		// Clear amounts to get fresh quote
+		setAmountIn("");
+		setAmountOut(null);
+	};
 
 	// Open confirmation modal with calculated data
 	const handleReviewSwap = () => {
@@ -392,8 +369,8 @@ export function SwapPage() {
 				minAmountOut
 			);
 		} catch (err) {
-			const message = err instanceof Error ? err.message : "Swap failed";
-			setError(message);
+			const friendlyMessage = getFriendlyErrorMessage(err);
+			setError(friendlyMessage);
 			console.error("Swap error:", err);
 			
 			// Update notification to error
@@ -401,7 +378,7 @@ export function SwapPage() {
 				setNotifications((prev) =>
 					prev.map((n) =>
 						n.id === currentTxId
-							? { ...n, status: "error", message }
+							? { ...n, status: "error", message: friendlyMessage }
 							: n
 					)
 				);
@@ -443,8 +420,8 @@ export function SwapPage() {
 
 			console.log("✅ Approval transaction sent");
 		} catch (err) {
-			const message = err instanceof Error ? err.message : "Approval failed";
-			setError(message);
+			const friendlyMessage = getFriendlyErrorMessage(err);
+			setError(friendlyMessage);
 			console.error("Approval error:", err);
 			
 			// Update notification to error
@@ -452,7 +429,7 @@ export function SwapPage() {
 				setNotifications((prev) =>
 					prev.map((n) =>
 						n.id === currentTxId
-							? { ...n, status: "error", message }
+							? { ...n, status: "error", message: friendlyMessage }
 							: n
 					)
 				);
@@ -537,18 +514,28 @@ export function SwapPage() {
 
 	// Track errors
 	useEffect(() => {
-		if (swapError && currentTxId) {
-			console.log("❌ Transaction ERROR:", swapError.message);
+		if (swapError && currentTxId && !isSwapRejection) {
+			// Don't show error for user rejections - they're not real errors
+			const friendlyMessage = swapErrorMessage || getFriendlyErrorMessage(swapError);
+			console.log("❌ Transaction ERROR:", friendlyMessage);
+			setError(friendlyMessage);
 			setNotifications((prev) =>
 				prev.map((n) =>
 					n.id === currentTxId && n.status !== "error"
-						? { ...n, status: "error", message: swapError.message || "Transaction failed" }
+						? { ...n, status: "error", message: friendlyMessage }
 						: n
 				)
 			);
 			setCurrentTxId(null);
+		} else if (isSwapRejection && currentTxId) {
+			// User rejection - just clear the notification without showing error
+			setNotifications((prev) =>
+				prev.filter((n) => n.id !== currentTxId)
+			);
+			setCurrentTxId(null);
+			setError(null);
 		}
-	}, [swapError, currentTxId]);
+	}, [swapError, swapErrorMessage, isSwapRejection, currentTxId]);
 
 	// General status logging
 	useEffect(() => {
@@ -643,7 +630,7 @@ export function SwapPage() {
 							balance={balanceIn}
 						/>
 						{/* Swap Direction Button */}
-						{/* <div className='flex justify-center items-center h-0 z-10 relative'>
+						<div className='flex justify-center items-center h-0 z-10 relative'>
 							<button
 								onClick={swapTokens}
 								className='flex items-center justify-center size-12 bg-[#23483c] border-4 border-solid border-[#1a3a2f] rounded-full text-primary hover:bg-[#2c5a4b] transition-colors'
@@ -652,7 +639,7 @@ export function SwapPage() {
 									arrow_downward
 								</span>
 							</button>
-						</div> */}
+						</div>
 						{/* To Token Section */}
 						<TokenInput
 							label='You Receive'

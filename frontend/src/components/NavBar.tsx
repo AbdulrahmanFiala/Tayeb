@@ -1,12 +1,30 @@
-import { useNavigate } from "react-router";
+import { useNavigate, useLocation } from "react-router";
 import { useWallet } from "../hooks/useWallet";
 
 export const NavBar: React.FC = () => {
 	const { address, isConnected, connectWallet, disconnectWallet } = useWallet();
 	const navigate = useNavigate();
+	const location = useLocation();
 
 	const shortenAddress = (addr: string) => {
 		return `${addr.substring(0, 6)}...${addr.substring(addr.length - 4)}`;
+	};
+
+	// Check if a route is active
+	const isActive = (path: string) => {
+		if (path === "/") {
+			return location.pathname === "/";
+		}
+		return location.pathname.startsWith(path);
+	};
+
+	// Get nav button classes based on active state
+	const getNavButtonClasses = (path: string) => {
+		const baseClasses = "text-base font-medium leading-normal transition-colors bg-transparent border-b-2 focus:outline-none";
+		if (isActive(path)) {
+			return `${baseClasses} text-white border-primary`;
+		}
+		return `${baseClasses} text-white/70 border-transparent hover:text-primary hover:border-primary`;
 	};
 
 	return (
@@ -37,25 +55,31 @@ export const NavBar: React.FC = () => {
 				<div className='hidden md:flex items-center gap-9'>
 					<button
 						onClick={() => navigate("/")}
-						className='text-white text-base font-medium leading-normal hover:text-primary transition-colors bg-transparent border-transparent hover:border-transparent hover:border-b-2 hover:outline-0 focus:outline-none'
+						className={getNavButtonClasses("/")}
 					>
 						Home
 					</button>
 					<button
+						onClick={() => navigate("/tokens")}
+						className={getNavButtonClasses("/tokens")}
+					>
+						Tokens
+					</button>
+					<button
 						onClick={() => navigate("/swap")}
-						className='text-white/70 text-base font-medium leading-normal hover:text-primary transition-colors bg-transparent border-transparent hover:border-transparent hover:border-b-2 hover:outline-0 focus:outline-none'
+						className={getNavButtonClasses("/swap")}
 					>
 						Swap
 					</button>
 					<button
 						onClick={() => navigate("/dca")}
-						className='text-white/70 text-base font-medium leading-normal hover:text-primary transition-colors bg-transparent border-transparent hover:border-transparent hover:border-b-2 hover:outline-0 focus:outline-none'
+						className={getNavButtonClasses("/dca")}
 					>
 						DCA
 					</button>
 					<button
 						onClick={() => navigate("/about")}
-						className='text-white/70 text-base font-medium leading-normal hover:text-primary transition-colors bg-transparent border-transparent hover:border-transparent hover:border-b-2 hover:outline-0 focus:outline-none'
+						className={getNavButtonClasses("/about")}
 					>
 						About
 					</button>
