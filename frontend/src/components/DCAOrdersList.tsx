@@ -143,11 +143,17 @@ export function DCAOrdersList({ orders, tokens, isLoading, onCancelOrder }: DCAO
 		return Number(order.nextExecutionTime) <= now;
 	};
 
-	// Helper to calculate first execution time (rounded to next hour from startTime)
-	const getFirstExecutionTime = (startTime: bigint): bigint => {
-		const startTimestamp = Number(startTime);
-		// Round to next hour: ((timestamp / 3600) + 1) * 3600
-		// Then subtract blocks * blockTime (from contract)
+	// Helper to get first execution time - use contract's nextExecutionTime directly
+	// When intervalsCompleted === 0, nextExecutionTime is the first execution time
+	// For executed orders, we can't get the original first execution time from contract,
+	// so we calculate it from startTime as a fallback (though it won't account for 5-min skip for old orders)
+	const getFirstExecutionTime = (order: DCAOrder): bigint => {
+		// For orders that haven't executed yet, use nextExecutionTime (contract's calculated value)
+		if (order.intervalsCompleted === 0n) {
+			return order.nextExecutionTime;
+		}
+		// For executed orders, calculate from startTime (fallback - won't match contract logic for old orders)
+		const startTimestamp = Number(order.startTime);
 		return BigInt(((Math.floor(startTimestamp / HOUR_IN_SECONDS) + 1) * HOUR_IN_SECONDS) - (BLOCKS_BEFORE_HOUR * BLOCK_TIME));
 	};
 
@@ -309,7 +315,7 @@ export function DCAOrdersList({ orders, tokens, isLoading, onCancelOrder }: DCAO
 									{filteredOrders.map((order) => {
 										const { sourceToken, targetToken, status, intervalStr, amountStr } = processOrderData(order);
 										const ready = isOrderReady(order);
-										const firstExecutionTime = getFirstExecutionTime(order.startTime);
+										const firstExecutionTime = getFirstExecutionTime(order);
 										const firstExecutionStr = formatExecutionTimeWithBlock(firstExecutionTime);
 										const nextExecutionWithBlockStr = formatExecutionTimeWithBlock(order.nextExecutionTime);
 
@@ -415,7 +421,7 @@ export function DCAOrdersList({ orders, tokens, isLoading, onCancelOrder }: DCAO
 												<div className="flex justify-between text-sm">
 													<span className="text-white/60">First execution:</span>
 													<span className="text-white/80 text-xs">
-														{formatExecutionTimeWithBlock(getFirstExecutionTime(order.startTime))}
+														{formatExecutionTimeWithBlock(getFirstExecutionTime(order))}
 													</span>
 												</div>
 												<div className="flex justify-between text-sm">
