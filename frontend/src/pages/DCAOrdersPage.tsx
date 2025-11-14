@@ -9,15 +9,17 @@ import { useWallet } from "../hooks/useWallet";
 import { TransactionNotificationList } from "../components/TransactionNotification";
 import { ConfirmModal } from "../components/ConfirmModal";
 import { getFriendlyErrorMessage, isUserRejection } from "../utils/errorMessages";
+import { CONTRACTS } from "../config/contracts";
 import halaCoinsData from "../../../config/halaCoins.json";
 import type { Token, TransactionNotification } from "../types";
 
 export const DCAOrdersPage: React.FC = () => {
 	const { coins, coinsLoading, coinsError } = useShariaCompliance();
-	const { address, isConnected } = useWallet();
+	const { address, isConnected, isOnMoonbaseAlpha } = useWallet();
 	
 	// DCA hooks
 	const {
+		createDCAOrderWithDEV,
 		createDCAOrderWithToken,
 		approveToken,
 		cancelDCAOrder,
@@ -113,8 +115,21 @@ export const DCAOrdersPage: React.FC = () => {
 		};
 		setNotifications((prev) => [...prev, approvalNotification]);
 
-		// Approve token (errors will be handled by effects)
-		approveToken(token.addresses.moonbase as Address, amount);
+		try {
+			// Approve token (will prompt to switch network if needed)
+			await approveToken(token.addresses.moonbase as Address, amount);
+		} catch (error: any) {
+			// Network switch errors will be caught and shown in the notification
+			const errorMessage = error?.message || "Failed to approve token";
+			setNotifications((prev) =>
+				prev.map((n) =>
+					n.id === txId
+						? { ...n, status: "error", message: errorMessage }
+						: n
+				)
+			);
+			setCurrentTxId(null);
+		}
 	};
 
 	// Create DCA order
@@ -147,14 +162,44 @@ export const DCAOrdersPage: React.FC = () => {
 			data.interval === "day" ? BigInt(86400) :
 			BigInt(604800); // week
 
-		// Create order (errors will be handled by effects)
-		createDCAOrderWithToken(
-			data.sourceToken.addresses.moonbase as Address,
-			data.targetToken.addresses.moonbase as Address,
-			amountPerInterval,
-			intervalSeconds,
-			totalIntervals
-		);
+		// Check if source token is native DEV
+		const isNativeDEV = data.sourceToken.symbol === "DEV" && 
+			data.sourceToken.addresses.moonbase?.toLowerCase() === CONTRACTS.WETH.toLowerCase();
+
+		try {
+			// Create order (will prompt to switch network if needed)
+			if (isNativeDEV) {
+				// Use native DEV function (no approval needed)
+				const totalValue = amountPerInterval * totalIntervals;
+				await createDCAOrderWithDEV(
+					data.targetToken.addresses.moonbase as Address,
+					amountPerInterval,
+					intervalSeconds,
+					totalIntervals,
+					totalValue
+				);
+			} else {
+				// Use regular token function (requires approval)
+				await createDCAOrderWithToken(
+					data.sourceToken.addresses.moonbase as Address,
+					data.targetToken.addresses.moonbase as Address,
+					amountPerInterval,
+					intervalSeconds,
+					totalIntervals
+				);
+			}
+		} catch (error: any) {
+			// Network switch errors will be caught and shown in the notification
+			const errorMessage = error?.message || "Failed to create DCA order";
+			setNotifications((prev) =>
+				prev.map((n) =>
+					n.id === txId
+						? { ...n, status: "error", message: errorMessage }
+						: n
+				)
+			);
+			setCurrentTxId(null);
+		}
 	};
 
 
@@ -164,9 +209,9 @@ export const DCAOrdersPage: React.FC = () => {
 	};
 	
 	// Confirm cancellation
-	const confirmCancelOrder = () => {
+	const confirmCancelOrder = async () => {
 		if (!cancelConfirmModal.orderId) return;
-		
+
 		const orderId = cancelConfirmModal.orderId;
 		setCancelConfirmModal({ isOpen: false, orderId: null });
 
@@ -183,8 +228,21 @@ export const DCAOrdersPage: React.FC = () => {
 			},
 		]);
 
-		// Cancel order (errors will be handled by effects)
-		cancelDCAOrder(orderId);
+		try {
+			// Cancel order (will prompt to switch network if needed)
+			await cancelDCAOrder(orderId);
+		} catch (error: any) {
+			// Network switch errors will be caught and shown in the notification
+			const errorMessage = error?.message || "Failed to cancel DCA order";
+			setNotifications((prev) =>
+				prev.map((n) =>
+					n.id === txId
+						? { ...n, status: "error", message: errorMessage }
+						: n
+				)
+			);
+			setCurrentTxId(null);
+		}
 	};
 	
 	// Cancel confirmation modal

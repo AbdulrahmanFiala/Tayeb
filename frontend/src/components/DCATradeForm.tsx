@@ -6,6 +6,7 @@ import type { Token } from "../types";
 import { TokenSelector } from "./TokenSelector";
 import { useTokenBalance } from "../hooks/useTokenBalance";
 import { ERC20_ABI } from "../config/abis";
+import { CONTRACTS } from "../config/contracts";
 import deployedContracts from "../../../config/deployedContracts.json";
 
 const SHARIA_DCA_ADDRESS = (
@@ -196,6 +197,15 @@ export function DCATradeForm({
 			// At this point, hasAllowanceCheckFields() ensures these are non-null
 			if (!sourceToken || !address || !publicClient) {
 				resetApprovalState();
+				return;
+			}
+			
+			// Native DEV doesn't need approval - skip check
+			const isNativeDEV = sourceToken.symbol === "DEV" && 
+				sourceToken.addresses.moonbase?.toLowerCase() === CONTRACTS.WETH.toLowerCase();
+			
+			if (isNativeDEV) {
+				setNeedsApproval(false);
 				return;
 			}
 			

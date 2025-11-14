@@ -40,9 +40,15 @@ export function useWallet() {
 	};
 
 	// Switch to Moonbase Alpha if not already on it
-	const switchToMoonbaseAlpha = () => {
+	const switchToMoonbaseAlpha = async () => {
 		if (!isOnMoonbaseAlpha && switchChain) {
-			switchChain({ chainId: moonbaseAlpha.id });
+			try {
+				await switchChain({ chainId: moonbaseAlpha.id });
+			} catch (error) {
+				// If switch fails, the chain might not be added to MetaMask
+				// The error will be handled by the caller
+				throw error;
+			}
 		}
 	};
 

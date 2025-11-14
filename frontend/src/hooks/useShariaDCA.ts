@@ -2,13 +2,17 @@ import { useMemo } from "react";
 import type { Address } from "viem";
 import {
 	useAccount,
+	useChainId,
 	useReadContract,
 	useReadContracts,
 	useWriteContract,
 	useWaitForTransactionReceipt,
+	useSwitchChain,
 } from "wagmi";
+import { moonbaseAlpha } from "wagmi/chains";
 import { ERC20_ABI, ShariaDCAABI } from "../config/abis";
 import deployedContracts from "../../../config/deployedContracts.json";
+import { REQUIRED_CHAIN_ID, REQUIRED_CHAIN_NAME } from "../config/wagmi";
 
 const SHARIA_DCA_ADDRESS = (
 	deployedContracts as unknown as { main: { shariaDCA: string } }
@@ -36,7 +40,9 @@ export interface DCAOrder {
  * Hook for ShariaDCA contract interactions using Wagmi v2
  */
 export function useShariaDCA() {
-	const { address: userAddress } = useAccount();
+	const { address: userAddress, chainId: accountChainId } = useAccount();
+	const chainId = useChainId();
+	const { switchChain } = useSwitchChain();
 	const { 
 		writeContract, 
 		isPending: isWriting,
@@ -45,11 +51,54 @@ export function useShariaDCA() {
 		reset: resetWrite,
 	} = useWriteContract();
 
+	// Validate network before any transaction and prompt to switch if needed
+	// Use accountChainId if available (more reliable), fallback to chainId
+	const validateNetwork = async () => {
+		const currentChainId = accountChainId || chainId;
+		if (!currentChainId || currentChainId !== REQUIRED_CHAIN_ID) {
+			// Try to automatically switch to the correct network
+			if (switchChain) {
+				try {
+					await switchChain({ chainId: moonbaseAlpha.id });
+					// Wait a moment for the switch to complete
+					await new Promise(resolve => setTimeout(resolve, 500));
+					// Re-check after switch attempt
+					const newChainId = accountChainId || chainId;
+					if (newChainId !== REQUIRED_CHAIN_ID) {
+						throw new Error(
+							`Please switch to ${REQUIRED_CHAIN_NAME} (Chain ID: ${REQUIRED_CHAIN_ID}) in your wallet. If the network is not added, MetaMask will prompt you to add it.`
+						);
+					}
+				} catch (error: any) {
+					// If user rejects or switch fails, throw a helpful error
+					if (error?.code === 4902 || error?.message?.includes('4902')) {
+						// Chain not added - MetaMask should prompt to add it
+						throw new Error(
+							`Please add ${REQUIRED_CHAIN_NAME} (Chain ID: ${REQUIRED_CHAIN_ID}) to your wallet. MetaMask should prompt you to add it.`
+						);
+					} else if (error?.code === 4001 || error?.message?.includes('rejected')) {
+						// User rejected the switch
+						throw new Error(
+							`Network switch was rejected. Please switch to ${REQUIRED_CHAIN_NAME} (Chain ID: ${REQUIRED_CHAIN_ID}) manually in your wallet.`
+						);
+					} else {
+						throw new Error(
+							`Please switch to ${REQUIRED_CHAIN_NAME} (Chain ID: ${REQUIRED_CHAIN_ID}) in your wallet. If the network is not added, MetaMask will prompt you to add it.`
+						);
+					}
+				}
+			} else {
+				throw new Error(
+					`Wrong network! You're connected to chain ID ${currentChainId || 'unknown'}, but this app requires ${REQUIRED_CHAIN_NAME} (Chain ID: ${REQUIRED_CHAIN_ID}). Please switch networks in your wallet.`
+				);
+			}
+		}
+	};
+
 	// Wait for transaction confirmation
 	const {
 		isLoading: isConfirming,
 		isSuccess: isConfirmed,
-		isError: isConfirmError,
 		error: confirmError,
 	} = useWaitForTransactionReceipt({
 		hash: txHash,
@@ -67,7 +116,7 @@ export function useShariaDCA() {
 	});
 
 	// Create DCA order with DEV (native token)
-	const createDCAOrderWithDEV = (
+	const createDCAOrderWithDEV = async (
 		targetToken: Address,
 		amountPerInterval: bigint,
 		intervalSeconds: bigint,
@@ -75,6 +124,7 @@ export function useShariaDCA() {
 		totalValue: bigint
 	) => {
 		if (!userAddress) throw new Error("Wallet not connected");
+		await validateNetwork(); // Check network before transaction (will prompt to switch if needed)
 
 		writeContract({
 			address: SHARIA_DCA_ADDRESS,
@@ -86,7 +136,7 @@ export function useShariaDCA() {
 	};
 
 	// Create DCA order with ERC20 token
-	const createDCAOrderWithToken = (
+	const createDCAOrderWithToken = async (
 		sourceToken: Address,
 		targetToken: Address,
 		amountPerInterval: bigint,
@@ -94,6 +144,7 @@ export function useShariaDCA() {
 		totalIntervals: bigint
 	) => {
 		if (!userAddress) throw new Error("Wallet not connected");
+		await validateNetwork(); // Check network before transaction (will prompt to switch if needed)
 
 		writeContract({
 			address: SHARIA_DCA_ADDRESS,
@@ -110,8 +161,9 @@ export function useShariaDCA() {
 	};
 
 	// Approve token for DCA contract
-	const approveToken = (tokenAddress: Address, amount: bigint) => {
+	const approveToken = async (tokenAddress: Address, amount: bigint) => {
 		if (!userAddress) throw new Error("Wallet not connected");
+		await validateNetwork(); // Check network before transaction (will prompt to switch if needed)
 
 		writeContract({
 			address: tokenAddress,
@@ -122,7 +174,8 @@ export function useShariaDCA() {
 	};
 
 	// Execute DCA order
-	const executeDCAOrder = (orderId: bigint) => {
+	const executeDCAOrder = async (orderId: bigint) => {
+		await validateNetwork(); // Check network before transaction (will prompt to switch if needed)
 		writeContract({
 			address: SHARIA_DCA_ADDRESS,
 			abi: ShariaDCAABI,
@@ -132,8 +185,9 @@ export function useShariaDCA() {
 	};
 
 	// Cancel DCA order
-	const cancelDCAOrder = (orderId: bigint) => {
+	const cancelDCAOrder = async (orderId: bigint) => {
 		if (!userAddress) throw new Error("Wallet not connected");
+		await validateNetwork(); // Check network before transaction (will prompt to switch if needed)
 
 		writeContract({
 			address: SHARIA_DCA_ADDRESS,

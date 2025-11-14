@@ -74,6 +74,14 @@ export function SwapPage() {
 	const { balance: balanceIn, refetch: refetchBalanceIn } = useTokenBalance(tokenIn);
 	const { balance: balanceOut, refetch: refetchBalanceOut } = useTokenBalance(tokenOut);
 	
+	// Check if user has insufficient balance
+	const hasInsufficientBalance = useMemo(() => {
+		if (!amountIn || !tokenIn || !balanceIn || !isConnected) return false;
+		const amount = parseFloat(amountIn);
+		const balance = parseFloat(balanceIn);
+		return !isNaN(amount) && !isNaN(balance) && amount > balance;
+	}, [amountIn, balanceIn, tokenIn, isConnected]);
+	
 	// Modal and notification state
 	const [showModal, setShowModal] = useState(false);
 	const [confirmationData, setConfirmationData] = useState<SwapConfirmationData | null>(null);
@@ -313,6 +321,12 @@ export function SwapPage() {
 			return;
 		}
 
+		// Validate balance before opening confirmation modal
+		if (hasInsufficientBalance) {
+			setError(`Insufficient balance! You're trying to swap ${amountIn} ${tokenIn.symbol} but you only have ${balanceIn} ${tokenIn.symbol}.`);
+			return;
+		}
+
 		setError(null);
 
 		// Calculate values
@@ -353,6 +367,18 @@ export function SwapPage() {
 	// Execute the swap after confirmation
 	const handleConfirmSwap = async () => {
 		if (!confirmationData || !tokenIn || !tokenOut) return;
+
+		// Additional safety check: validate network before proceeding
+		if (!isOnMoonbaseAlpha) {
+			setError(`Wrong network! Please switch to Moonbase Alpha Testnet before executing the swap.`);
+			return;
+		}
+
+		// Additional safety check: validate balance before proceeding
+		if (hasInsufficientBalance) {
+			setError(`Insufficient balance! You're trying to swap ${amountIn} ${tokenIn.symbol} but you only have ${balanceIn} ${tokenIn.symbol}.`);
+			return;
+		}
 
 		try {
 			setError(null);
@@ -415,6 +441,18 @@ export function SwapPage() {
 	// Handle token approval (separate transaction)
 	const handleApproveToken = async () => {
 		if (!tokenIn || !amountIn || !address) return;
+
+		// Additional safety check: validate network before proceeding
+		if (!isOnMoonbaseAlpha) {
+			setError(`Wrong network! Please switch to Moonbase Alpha Testnet before approving tokens.`);
+			return;
+		}
+
+		// Additional safety check: validate balance before proceeding
+		if (hasInsufficientBalance) {
+			setError(`Insufficient balance! You're trying to approve ${amountIn} ${tokenIn.symbol} but you only have ${balanceIn} ${tokenIn.symbol}.`);
+			return;
+		}
 
 		try {
 			setIsApprovingToken(true);
@@ -725,11 +763,14 @@ export function SwapPage() {
 										!amountIn ||
 										!amountOut ||
 										!isConnected ||
-										!isOnMoonbaseAlpha
+										!isOnMoonbaseAlpha ||
+										hasInsufficientBalance
 									}
 									className='flex min-w-[84px] w-full cursor-pointer items-center justify-center overflow-hidden rounded-xl h-14 px-5 bg-primary text-background-dark text-lg font-bold leading-normal tracking-wide hover:opacity-90 transition-opacity disabled:opacity-20 disabled:cursor-not-allowed'
 								>
-									{isApprovingToken
+									{hasInsufficientBalance
+										? "Insufficient balance"
+										: isApprovingToken
 										? "Approving..."
 										: checkingAllowance
 										? "Checking..."
@@ -750,11 +791,14 @@ export function SwapPage() {
 										parseFloat(amountIn) <= 0 ||
 										isNaN(parseFloat(amountIn)) ||
 										!isConnected ||
-										!isOnMoonbaseAlpha
+										!isOnMoonbaseAlpha ||
+										hasInsufficientBalance
 									}
 									className='flex min-w-[84px] w-full cursor-pointer items-center justify-center overflow-hidden rounded-xl h-14 px-5 bg-primary text-background-dark text-lg font-bold leading-normal tracking-wide hover:opacity-90 transition-opacity disabled:opacity-20 disabled:cursor-not-allowed'
 								>
-									{!isOnMoonbaseAlpha && isConnected
+									{hasInsufficientBalance
+										? "Insufficient balance"
+										: !isOnMoonbaseAlpha && isConnected
 										? "Wrong Network"
 										: quoteLoading
 										? "Getting quote..."
