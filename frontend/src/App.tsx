@@ -18,8 +18,6 @@ function App() {
 				<Route path='/tokens' element={<TokensPage />} />
 				<Route path='/scanner' element={<ShariaScannerPage />} />
 				<Route path='/dca' element={<DCAOrdersPage />} />
-				{/* Redirect /dca/new to /dca since they're now combined */}
-				<Route path='/dca/new' element={<Navigate to='/dca' replace />} />
 				<Route path='/about' element={<AboutPage />} />
 			</Routes>
 		</div>

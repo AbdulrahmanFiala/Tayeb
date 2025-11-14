@@ -4,7 +4,7 @@
       "symbol": "BTC",
       "name": "Bitcoin",
       "decimals": 8,
-      "avgSlippagePercent": 1.0,
+      "avgSlippagePercent": 1,
       "complianceReason": "Decentralized cryptocurrency, no interest-bearing mechanism",
       "description": "Leading decentralized cryptocurrency",
       "addresses": {
@@ -16,7 +16,7 @@
       "symbol": "ETH",
       "name": "Ethereum",
       "decimals": 18,
-      "avgSlippagePercent": 1.0,
+      "avgSlippagePercent": 1,
       "complianceReason": "Smart contract platform, utility token",
       "description": "Decentralized smart contract platform",
       "addresses": {
@@ -52,7 +52,7 @@
       "symbol": "BNB",
       "name": "Binance Coin",
       "decimals": 18,
-      "avgSlippagePercent": 1.0,
+      "avgSlippagePercent": 1,
       "complianceReason": "Utility token for Binance ecosystem",
       "description": "Native token of Binance exchange and BNB Chain",
       "addresses": {
@@ -88,7 +88,7 @@
       "symbol": "TRX",
       "name": "TRON",
       "decimals": 18,
-      "avgSlippagePercent": 2.0,
+      "avgSlippagePercent": 2,
       "complianceReason": "Decentralized content platform token",
       "description": "Decentralized entertainment and content-sharing platform",
       "addresses": {
@@ -124,7 +124,7 @@
       "symbol": "BCH",
       "name": "Bitcoin Cash",
       "decimals": 8,
-      "avgSlippagePercent": 1.0,
+      "avgSlippagePercent": 1,
       "complianceReason": "Peer-to-peer electronic cash, no interest-bearing",
       "description": "Bitcoin fork focused on fast, low-cost payments",
       "addresses": {
@@ -136,7 +136,7 @@
       "symbol": "LEO",
       "name": "UNUS SED LEO",
       "decimals": 18,
-      "avgSlippagePercent": 2.0,
+      "avgSlippagePercent": 2,
       "complianceReason": "Utility token for iFinex ecosystem",
       "description": "Utility token for Bitfinex and iFinex services",
       "addresses": {
@@ -160,7 +160,7 @@
       "symbol": "SUI",
       "name": "Sui",
       "decimals": 9,
-      "avgSlippagePercent": 2.0,
+      "avgSlippagePercent": 2,
       "complianceReason": "Layer 1 blockchain utility token",
       "description": "Next-generation smart contract platform",
       "addresses": {
@@ -172,7 +172,7 @@
       "symbol": "HBAR",
       "name": "Hedera",
       "decimals": 8,
-      "avgSlippagePercent": 2.0,
+      "avgSlippagePercent": 2,
       "complianceReason": "Public distributed ledger utility token",
       "description": "Enterprise-grade distributed ledger",
       "addresses": {
@@ -191,6 +191,18 @@
         "moonbase": "0x964093e4858D7e062EBba4f76CbB7EB5f7e1c95E"
       },
       "permissible": true
+    },
+    {
+      "symbol": "DEV",
+      "name": "DEV",
+      "decimals": 18,
+      "avgSlippagePercent": 1.0,
+      "complianceReason": "Native gas token for Moonbase Alpha, no interest-bearing mechanism",
+      "description": "Native gas token for Moonbase Alpha testnet",
+      "addresses": {
+        "moonbase": "0xD909178CC99d318e4D46e7E66a972955859670E1"
+      },
+      "permissible": true
     }
   ],
   "stablecoins": [
@@ -199,7 +211,7 @@
   ],
   "metadata": {
     "version": "1.0.1",
-    "lastUpdated": "2025-11-11T13:54:00.000Z",
+    "lastUpdated": "2025-11-14T19:36:38.288Z",
     "network": "moonbase"
   }
 }

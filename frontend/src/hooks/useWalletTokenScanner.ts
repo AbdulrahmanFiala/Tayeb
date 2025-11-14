@@ -1,15 +1,16 @@
 import { useMemo, useState, useCallback } from "react";
-import { useAccount, useReadContracts, useBalance, useChainId } from "wagmi";
-import { formatUnits, isAddress } from "viem";
+import { useAccount, useChainId, usePublicClient, useBalance } from "wagmi";
+import { formatUnits, isAddress, getAddress } from "viem";
 import type { Address } from "viem";
-import { ERC20_ABI, ShariaComplianceABI } from "../config/abis";
+import { ERC20_ABI } from "../config/abis";
 import { useShariaCompliance } from "./useShariaCompliance";
-import deployedContracts from "../../../config/deployedContracts.json";
 import { moonbaseAlpha } from "wagmi/chains";
+import deployedContracts from "../../../config/deployedContracts.json";
 
-const SHARIA_COMPLIANCE_ADDRESS = (
-	deployedContracts as unknown as { main: { shariaCompliance: string } }
-).main.shariaCompliance as Address;
+const WETH_ADDRESS = (
+	deployedContracts as unknown as { amm: { weth: string } }
+).amm.weth as Address;
+
 
 export interface ScannedToken {
 	address: string;
@@ -41,9 +42,10 @@ interface UseWalletTokenScannerReturn {
  * @param scanAddress Optional address to scan. If not provided, uses connected wallet address
  */
 export function useWalletTokenScanner(scanAddress?: Address): UseWalletTokenScannerReturn {
-	const { address: connectedAddress, isConnected } = useAccount();
+	const { address: connectedAddress } = useAccount();
 	const chainId = useChainId();
 	const { coins } = useShariaCompliance();
+	const publicClient = usePublicClient();
 	const [scannedTokens, setScannedTokens] = useState<ScannedToken[]>([]);
 	const [isScanning, setIsScanning] = useState(false);
 	const [error, setError] = useState<Error | null>(null);
@@ -51,7 +53,7 @@ export function useWalletTokenScanner(scanAddress?: Address): UseWalletTokenScan
 	// Use custom address if provided, otherwise use connected address
 	const addressToScan = scanAddress || connectedAddress;
 
-	// Get native DEV balance
+	// Get native DEV balance (needed for checking DEV even if wrapped)
 	const { data: nativeBalance } = useBalance({
 		address: addressToScan,
 		query: {
@@ -59,123 +61,6 @@ export function useWalletTokenScanner(scanAddress?: Address): UseWalletTokenScan
 		},
 	});
 
-	// Prepare contract read queries for all tokens
-	const tokenAddresses = useMemo(
-		() => coins.map((coin) => coin.tokenAddress as `0x${string}`),
-		[coins]
-	);
-
-	// Batch read balances, decimals, names, and symbols for all tokens
-	const balanceContracts = useMemo(
-			() =>
-			tokenAddresses.map((tokenAddress) => ({
-				address: tokenAddress,
-				abi: ERC20_ABI,
-				functionName: "balanceOf" as const,
-				args: addressToScan ? [addressToScan] : undefined,
-			})),
-		[tokenAddresses, addressToScan]
-	);
-
-	const decimalsContracts = useMemo(
-		() =>
-			tokenAddresses.map((tokenAddress) => ({
-				address: tokenAddress,
-				abi: ERC20_ABI,
-				functionName: "decimals" as const,
-			})),
-		[tokenAddresses]
-	);
-
-	const nameContracts = useMemo(
-		() =>
-			tokenAddresses.map((tokenAddress) => ({
-				address: tokenAddress,
-				abi: ERC20_ABI,
-				functionName: "name" as const,
-			})),
-		[tokenAddresses]
-	);
-
-	const symbolContracts = useMemo(
-		() =>
-			tokenAddresses.map((tokenAddress) => ({
-				address: tokenAddress,
-				abi: ERC20_ABI,
-				functionName: "symbol" as const,
-			})),
-		[tokenAddresses]
-	);
-
-	const complianceContracts = useMemo(
-		() =>
-			tokenAddresses.map((tokenAddress) => ({
-				address: SHARIA_COMPLIANCE_ADDRESS,
-				abi: ShariaComplianceABI,
-				functionName: "getCoinByAddress" as const,
-				args: [tokenAddress] as const,
-			})),
-		[tokenAddresses]
-	);
-
-	// Track if we're ready to scan
-	const [isReadyToScan, setIsReadyToScan] = useState(false);
-
-	// Execute all reads
-	const {
-		data: balanceResults,
-		isLoading: balancesLoading,
-		refetch: refetchBalances,
-	} = useReadContracts({
-		contracts: balanceContracts,
-		query: {
-			enabled: Boolean(addressToScan && balanceContracts.length > 0 && isReadyToScan),
-		},
-	});
-
-	const {
-		data: decimalsResults,
-		isLoading: decimalsLoading,
-		refetch: refetchDecimals,
-	} = useReadContracts({
-		contracts: decimalsContracts,
-		query: {
-			enabled: Boolean(decimalsContracts.length > 0 && isReadyToScan),
-		},
-	});
-
-	const {
-		data: nameResults,
-		isLoading: namesLoading,
-		refetch: refetchNames,
-	} = useReadContracts({
-		contracts: nameContracts,
-		query: {
-			enabled: Boolean(nameContracts.length > 0 && isReadyToScan),
-		},
-	});
-
-	const {
-		data: symbolResults,
-		isLoading: symbolsLoading,
-		refetch: refetchSymbols,
-	} = useReadContracts({
-		contracts: symbolContracts,
-		query: {
-			enabled: Boolean(symbolContracts.length > 0 && isReadyToScan),
-		},
-	});
-
-	const {
-		data: complianceResults,
-		isLoading: complianceLoading,
-		refetch: refetchCompliance,
-	} = useReadContracts({
-		contracts: complianceContracts,
-		query: {
-			enabled: Boolean(complianceContracts.length > 0 && isReadyToScan),
-		},
-	});
 
 	// Scan wallet function
 	const scanWallet = useCallback(async () => {
@@ -196,144 +81,140 @@ export function useWalletTokenScanner(scanAddress?: Address): UseWalletTokenScan
 			return;
 		}
 
-		if (coins.length === 0) {
-			setError(new Error("No tokens available to scan"));
-			return;
-		}
-
 		setIsScanning(true);
 		setError(null);
-		setIsReadyToScan(true);
 
 		try {
-			// Trigger all refetches and wait for results
-			const [
-				balanceResponse,
-				decimalsResponse,
-				nameResponse,
-				symbolResponse,
-				complianceResponse,
-			] = await Promise.all([
-				refetchBalances(),
-				refetchDecimals(),
-				refetchNames(),
-				refetchSymbols(),
-				refetchCompliance(),
-			]);
-
-			// Use the refetched data directly
-			const finalBalanceResults = balanceResponse.data || balanceResults;
-			const finalDecimalsResults = decimalsResponse.data || decimalsResults;
-			const finalNameResults = nameResponse.data || nameResults;
-			const finalSymbolResults = symbolResponse.data || symbolResults;
-			const finalComplianceResults = complianceResponse.data || complianceResults;
-
-			// Ensure we have all results before processing
-			if (
-				!finalBalanceResults ||
-				!finalDecimalsResults ||
-				!finalNameResults ||
-				!finalSymbolResults ||
-				!finalComplianceResults
-			) {
-				throw new Error("Failed to fetch token data");
+			if (!addressToScan) {
+				throw new Error("No address to scan");
 			}
+
+			if (!publicClient) {
+				throw new Error("Public client not available");
+			}
+
+			// Step 1: Loop through halal coins and check if they're in the wallet
+			console.log("🔍 Checking wallet for halal coins...");
+			console.log(`📊 Found ${coins.length} registered coins to check`);
+
 			const tokens: ScannedToken[] = [];
 
-			// Process each token
-			for (let i = 0; i < tokenAddresses.length; i++) {
-				const tokenAddress = tokenAddresses[i];
-				const balanceResult = finalBalanceResults?.[i];
-				const decimalsResult = finalDecimalsResults?.[i];
-				const nameResult = finalNameResults?.[i];
-				const symbolResult = finalSymbolResults?.[i];
-				const complianceResult = finalComplianceResults?.[i];
+			// Get token addresses and prepare balance checks
+			const tokenAddresses: Address[] = [];
+			const coinMap = new Map<string, { symbol: string; name: string; address: Address; verified: boolean; complianceReason: string }>();
 
-				// Skip if balance read failed or no balance
-				if (
-					!balanceResult ||
-					balanceResult.status !== "success" ||
-					!balanceResult.result ||
-					balanceResult.result === 0n
-				) {
-					continue;
-				}
-
-				const balanceRaw = balanceResult.result as bigint;
-
-				// Get token metadata
-				const decimals =
-					decimalsResult?.status === "success" && decimalsResult.result
-						? Number(decimalsResult.result)
-						: 18;
-
-				const name =
-					nameResult?.status === "success" && nameResult.result
-						? (nameResult.result as string)
-						: coins[i]?.name || "Unknown Token";
-
-				const symbol =
-					symbolResult?.status === "success" && symbolResult.result
-						? (symbolResult.result as string)
-						: coins[i]?.symbol || "UNKNOWN";
-
-				// Check compliance status
-				let status: "compliant" | "non-compliant" | "unknown" = "unknown";
-				let complianceReason: string | undefined;
-				let verified: boolean | undefined;
-
-				if (complianceResult?.status === "success" && complianceResult.result) {
-					const coin = complianceResult.result as {
-						exists: boolean;
-						verified: boolean;
-						complianceReason: string;
-					};
-
-					if (coin.exists) {
-						status = coin.verified ? "compliant" : "non-compliant";
-						complianceReason = coin.complianceReason;
-						verified = coin.verified;
-					}
-				} else {
-					// Fallback: check if token exists in coins array
-					const coin = coins.find(
-						(c) => c.tokenAddress.toLowerCase() === tokenAddress.toLowerCase()
-					);
-					if (coin) {
-						status = coin.verified ? "compliant" : "non-compliant";
-						complianceReason = coin.complianceReason;
-						verified = coin.verified;
+			for (const coin of coins) {
+				if (coin.tokenAddress && coin.tokenAddress !== "0x0000000000000000000000000000000000000000") {
+					try {
+						const address = getAddress(coin.tokenAddress);
+						tokenAddresses.push(address);
+						coinMap.set(address.toLowerCase(), {
+							symbol: coin.symbol || "UNKNOWN",
+							name: coin.name || "Unknown Token",
+							address: address,
+							verified: coin.verified,
+							complianceReason: coin.complianceReason || "",
+						});
+					} catch (err) {
+						console.warn(`⚠️ Invalid coin address: ${coin.tokenAddress}`, err);
 					}
 				}
-
-				const balance = formatUnits(balanceRaw, decimals);
-
-				tokens.push({
-					address: tokenAddress,
-					symbol,
-					name,
-					balance,
-					balanceRaw,
-					decimals,
-					status,
-					complianceReason,
-					verified,
-				});
 			}
 
-			// Add native DEV if balance > 0
-			if (nativeBalance && nativeBalance.value > 0n) {
-				tokens.push({
-					address: "0x0000000000000000000000000000000000000000",
-					symbol: "DEV",
-					name: "Moonbase DEV",
-					balance: formatUnits(nativeBalance.value, 18),
-					balanceRaw: nativeBalance.value,
-					decimals: 18,
-					status: "unknown", // Native token is not in compliance registry
-					complianceReason: undefined,
-					verified: undefined,
-				});
+			if (tokenAddresses.length === 0) {
+				console.log("⚠️ No valid token addresses found in registered coins");
+			} else {
+				// Check balances for all registered tokens using multicall
+				console.log(`🔍 Checking balances for ${tokenAddresses.length} registered tokens...`);
+
+				// Prepare multicall contracts for balanceOf
+				const balanceContracts = tokenAddresses.map((tokenAddress) => ({
+					address: tokenAddress,
+					abi: ERC20_ABI,
+					functionName: "balanceOf" as const,
+					args: [addressToScan] as const,
+				}));
+
+				// Also fetch decimals in case we don't have it
+				const decimalsContracts = tokenAddresses.map((tokenAddress) => ({
+					address: tokenAddress,
+					abi: ERC20_ABI,
+					functionName: "decimals" as const,
+				}));
+
+				// Execute multicalls in batches
+				const batchSize = 50;
+
+				for (let i = 0; i < balanceContracts.length; i += batchSize) {
+					const batchEnd = Math.min(i + batchSize, balanceContracts.length);
+					const balanceBatch = balanceContracts.slice(i, batchEnd);
+					const decimalsBatch = decimalsContracts.slice(i, batchEnd);
+
+					const [balanceResults, decimalsResults] = await Promise.all([
+						publicClient.multicall({ contracts: balanceBatch as any }),
+						publicClient.multicall({ contracts: decimalsBatch as any }),
+					]);
+
+					// Process results
+					for (let j = 0; j < balanceBatch.length; j++) {
+						const tokenIndex = i + j;
+						const tokenAddress = tokenAddresses[tokenIndex];
+						const tokenAddressLower = tokenAddress.toLowerCase();
+						const coin = coinMap.get(tokenAddressLower);
+
+						if (!coin) continue;
+
+						const balanceResult = balanceResults[j];
+						const decimalsResult = decimalsResults[j];
+
+						let balance = balanceResult?.status === "success" && balanceResult.result 
+							? (balanceResult.result as bigint) 
+							: 0n;
+
+						const decimals = decimalsResult?.status === "success" && decimalsResult.result 
+							? Number(decimalsResult.result) 
+							: 18;
+
+						// If this is WETH (wrapped DEV), also check native DEV balance
+						// Native DEV balance should be included since DEV is the native token
+						if (tokenAddressLower === WETH_ADDRESS.toLowerCase() && nativeBalance && nativeBalance.value > 0n) {
+							// Add native DEV balance to wrapped DEV balance
+							balance = balance + nativeBalance.value;
+							console.log(`  📊 DEV: Wrapped=${formatUnits(balance - nativeBalance.value, decimals)}, Native=${formatUnits(nativeBalance.value, 18)}, Total=${formatUnits(balance, decimals)}`);
+						}
+
+						// Only include tokens with non-zero balance
+						if (balance > 0n) {
+							console.log(`  ✅ Found ${coin.symbol}: ${formatUnits(balance, decimals)}`);
+
+							// Use compliance status from coin data
+							const status: "compliant" | "non-compliant" | "unknown" = coin.verified 
+								? "compliant" 
+								: coin.complianceReason 
+									? "non-compliant" 
+									: "unknown";
+
+							tokens.push({
+								address: tokenAddress,
+								symbol: coin.symbol,
+								name: coin.name,
+								balance: formatUnits(balance, decimals),
+								balanceRaw: balance,
+								decimals,
+								status,
+								complianceReason: coin.complianceReason || undefined,
+								verified: coin.verified,
+							});
+						}
+					}
+				}
+			}
+
+			// Get final list of tokens with balances
+			const tokensWithBalance = tokens;
+
+			if (tokensWithBalance.length === 0) {
+				console.log("⚠️ No tokens with non-zero balances found in wallet");
 			}
 
 			// Sort: compliant first, then unknown, then non-compliant
@@ -342,35 +223,21 @@ export function useWalletTokenScanner(scanAddress?: Address): UseWalletTokenScan
 				return statusOrder[a.status] - statusOrder[b.status];
 			});
 
+			console.log(`✅ Final scan result: ${tokens.length} tokens found (${tokens.filter(t => t.status === "compliant").length} compliant, ${tokens.filter(t => t.status === "unknown").length} unknown)`);
+
 			setScannedTokens(tokens);
 		} catch (err) {
 			setError(err instanceof Error ? err : new Error("Failed to scan wallet"));
 			console.error("Error scanning wallet:", err);
 		} finally {
 			setIsScanning(false);
-			setIsReadyToScan(false);
 		}
 	}, [
 		addressToScan,
 		chainId,
-		tokenAddresses,
-		balanceResults,
-		decimalsResults,
-		nameResults,
-		symbolResults,
-		complianceResults,
 		coins,
 		nativeBalance,
-		balancesLoading,
-		decimalsLoading,
-		namesLoading,
-		symbolsLoading,
-		complianceLoading,
-		refetchBalances,
-		refetchDecimals,
-		refetchNames,
-		refetchSymbols,
-		refetchCompliance,
+		publicClient,
 	]);
 
 	// Calculate summary

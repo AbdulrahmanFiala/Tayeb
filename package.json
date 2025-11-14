@@ -14,8 +14,7 @@
     "deploy:mint": "hardhat run scripts/deploy/mint-tokens.ts --network moonbase",
     "deploy:core": "hardhat run scripts/deploy/deploy-core.ts --network moonbase",
     "verify:all": "hardhat run scripts/deploy/verify-all.ts --network moonbase",
-    "sync:coins": "hardhat run scripts/automation/sync-coins-from-contract.ts --network moonbase",
-    "listen:events": "hardhat run scripts/automation/listen-coin-events.ts --network moonbase"
+    "sync:coins": "hardhat run scripts/automation/sync-coins-from-contract.ts --network moonbase"
   },
   "keywords": [
     "sharia",
