@@ -160,7 +160,7 @@ export function TokensPage() {
 								: "bg-[#23483c] text-white"
 						}`}
 					>
-						<p className='text-sm font-medium leading-normal'>Sort by 24h</p>
+						<p className='text-sm font-medium leading-normal'>Sort by Change</p>
 						<div
 							className={
 								sortBy === "change" ? "text-background-dark" : "text-white"

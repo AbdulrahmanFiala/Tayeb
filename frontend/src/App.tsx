@@ -6,6 +6,7 @@ import { DCAOrdersPage } from "./pages/DCAOrdersPage";
 import { HomePage } from "./pages/HomePage";
 import { SwapPage } from "./pages/SwapPage";
 import { TokensPage } from "./pages/TokensPage";
+import { ShariaScannerPage } from "./pages/ShariaScannerPage";
 
 function App() {
 	return (
@@ -15,6 +16,7 @@ function App() {
 				<Route path='/' element={<HomePage />} />
 				<Route path='/swap' element={<SwapPage />} />
 				<Route path='/tokens' element={<TokensPage />} />
+				<Route path='/scanner' element={<ShariaScannerPage />} />
 				<Route path='/dca' element={<DCAOrdersPage />} />
 				{/* Redirect /dca/new to /dca since they're now combined */}
 				<Route path='/dca/new' element={<Navigate to='/dca' replace />} />

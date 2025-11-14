@@ -143,6 +143,34 @@ export const ShariaComplianceABI = [
 		outputs: [{ name: "", type: "uint256" }],
 		stateMutability: "view",
 	},
+	{
+		type: "function",
+		name: "getSymbolByAddress",
+		inputs: [{ name: "tokenAddress", type: "address" }],
+		outputs: [{ name: "", type: "string" }],
+		stateMutability: "view",
+	},
+	{
+		type: "function",
+		name: "getCoinByAddress",
+		inputs: [{ name: "tokenAddress", type: "address" }],
+		outputs: [
+			{
+				name: "",
+				type: "tuple",
+				components: [
+					{ name: "id", type: "string" },
+					{ name: "name", type: "string" },
+					{ name: "symbol", type: "string" },
+					{ name: "tokenAddress", type: "address" },
+					{ name: "verified", type: "bool" },
+					{ name: "complianceReason", type: "string" },
+					{ name: "exists", type: "bool" },
+				],
+			},
+		],
+		stateMutability: "view",
+	},
 ] as const;
 
 export const ERC20_ABI = [
@@ -199,6 +227,20 @@ export const ERC20_ABI = [
 		name: "decimals",
 		inputs: [],
 		outputs: [{ name: "", type: "uint8" }],
+		stateMutability: "view",
+	},
+	{
+		type: "function",
+		name: "name",
+		inputs: [],
+		outputs: [{ name: "", type: "string" }],
+		stateMutability: "view",
+	},
+	{
+		type: "function",
+		name: "symbol",
+		inputs: [],
+		outputs: [{ name: "", type: "string" }],
 		stateMutability: "view",
 	},
 ] as const;

@@ -77,6 +77,12 @@ export const NavBar: React.FC = () => {
 						Swap
 					</button>
 					<button
+						onClick={() => navigate("/scanner")}
+						className={getNavButtonClasses("/scanner")}
+					>
+						Scanner
+					</button>
+					<button
 						onClick={() => navigate("/dca")}
 						className={getNavButtonClasses("/dca")}
 					>
