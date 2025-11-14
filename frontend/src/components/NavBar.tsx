@@ -1,8 +1,13 @@
+import { useState } from "react";
 import { useNavigate, useLocation } from "react-router";
 import { useWallet } from "../hooks/useWallet";
+import { WalletConnectModal } from "./WalletConnectModal";
+import { WalletAccountModal } from "./WalletAccountModal";
 
 export const NavBar: React.FC = () => {
-	const { address, isConnected, connectWallet, disconnectWallet } = useWallet();
+	const { address, isConnected } = useWallet();
+	const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
+	const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
 	const navigate = useNavigate();
 	const location = useLocation();
 
@@ -89,7 +94,7 @@ export const NavBar: React.FC = () => {
 					{isConnected ? (
 						<div className='flex items-center gap-2'>
 							<button
-								onClick={disconnectWallet}
+								onClick={() => setIsAccountModalOpen(true)}
 								className='flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-10 px-4 bg-primary text-background-dark text-sm font-bold leading-normal tracking-wide hover:opacity-90 transition-opacity'
 							>
 								{shortenAddress(address || "")}
@@ -97,7 +102,7 @@ export const NavBar: React.FC = () => {
 						</div>
 					) : (
 						<button
-							onClick={connectWallet}
+							onClick={() => setIsWalletModalOpen(true)}
 							className='flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-10 px-4 bg-primary text-background-dark text-sm font-bold leading-normal tracking-wide hover:opacity-90 transition-opacity'
 						>
 							Connect Wallet
@@ -113,6 +118,18 @@ export const NavBar: React.FC = () => {
 					</button>
 				</div>
 			</nav>
+			
+			{/* Wallet Connection Modal */}
+			<WalletConnectModal
+				isOpen={isWalletModalOpen}
+				onClose={() => setIsWalletModalOpen(false)}
+			/>
+			
+			{/* Wallet Account Modal */}
+			<WalletAccountModal
+				isOpen={isAccountModalOpen}
+				onClose={() => setIsAccountModalOpen(false)}
+			/>
 		</header>
 	);
 };

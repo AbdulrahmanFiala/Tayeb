@@ -4,9 +4,10 @@ import {
 	useConnect,
 	useDisconnect,
 	useSwitchChain,
+	useConnectors,
 } from "wagmi";
 import { moonbaseAlpha } from "wagmi/chains";
-import { injected } from "wagmi/connectors";
+import type { Connector } from "wagmi";
 
 /**
  * Refactored wallet hook using Wagmi v2
@@ -16,15 +17,26 @@ export function useWallet() {
 	const { address, isConnected, chain } = useAccount();
 	const chainId = useChainId();
 	const { switchChain } = useSwitchChain();
-	const { connect } = useConnect();
+	const { connect, error: connectError, isPending } = useConnect();
 	const { disconnect } = useDisconnect();
+	const availableConnectors = useConnectors();
 
 	// Check if on Moonbase Alpha testnet
 	const isOnMoonbaseAlpha = chainId === moonbaseAlpha.id;
 
-	// Connect wallet (MetaMask)
-	const connectWallet = () => {
-		connect({ connector: injected() });
+	// Connect wallet with a specific connector
+	const connectWallet = (connector?: Connector) => {
+		if (connector) {
+			connect({ connector });
+		} else {
+			// Fallback: try to use the first available injected connector (MetaMask)
+			const injectedConnector = availableConnectors.find(
+				(c) => c.id === "injected" || c.name.toLowerCase().includes("metamask")
+			);
+			if (injectedConnector) {
+				connect({ connector: injectedConnector });
+			}
+		}
 	};
 
 	// Switch to Moonbase Alpha if not already on it
@@ -48,5 +60,8 @@ export function useWallet() {
 		connectWallet,
 		switchToMoonbaseAlpha,
 		disconnectWallet,
+		connectors: availableConnectors,
+		connectError,
+		isConnecting: isPending,
 	};
 }

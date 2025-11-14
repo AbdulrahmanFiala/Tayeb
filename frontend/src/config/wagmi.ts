@@ -11,7 +11,7 @@ export const wagmiConfig = getDefaultConfig({
 	transports: {
 		[moonbaseAlpha.id]: http("https://rpc.api.moonbase.moonbeam.network"),
 	},
-	ssr: false, // Ensure client-side only
+	ssr: false, 
 });
 
 // Export the testnet chain and chain ID for validation
