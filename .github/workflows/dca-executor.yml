@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
-      MOONBASE_RPC_URL: https://rpc.api.moonbeam.network
+      MOONBASE_RPC_URL: https://rpc.api.moonbase.moonbeam.network
 
     steps:
       - uses: actions/checkout@v3
