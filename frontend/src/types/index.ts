@@ -50,6 +50,7 @@ export interface SwapState {
 export interface TokenPrice {
 	symbol: string;
 	usd: number;
+	change24h?: number;
 	marketCap?: number;
 	lastUpdated: number;
 }

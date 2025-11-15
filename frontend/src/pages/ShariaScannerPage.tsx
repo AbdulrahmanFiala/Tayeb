@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useWallet } from "../hooks/useWallet";
 import { useWalletTokenScanner } from "../hooks/useWalletTokenScanner";
 import { CryptoTokenIcon } from "../components/CryptoTokenIcon";
-import { formatUnits, isAddress } from "viem";
+import { isAddress } from "viem";
 import type { Address } from "viem";
 import { moonbaseAlpha } from "wagmi/chains";
 

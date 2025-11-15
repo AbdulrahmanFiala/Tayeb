@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router";
 import { formatUnits, parseUnits } from "viem";
-import { usePublicClient, useReadContract } from "wagmi";
+import { usePublicClient } from "wagmi";
 import { FaTimes } from "react-icons/fa";
 import tayebCoinsData from "../../../config/tayebCoins.json";
 import { TokenInput } from "../components/TokenInput";
@@ -115,7 +115,7 @@ export function SwapPage() {
 		return symbols;
 	}, [tokenIn, tokenOut]);
 	
-	const { prices, getPrice, calculateUsdValue } = useTokenPrices(tokenSymbols);
+	const { calculateUsdValue } = useTokenPrices(tokenSymbols);
 
 
 
@@ -464,8 +464,6 @@ export function SwapPage() {
 
 			// Don't create notification here - wait for txHash (after wallet confirmation)
 
-			const amountInWei = parseUnits(amountIn, tokenIn.decimals);
-			
 			// Approve maximum amount to avoid future approvals
 			const maxApproval = BigInt("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
 			

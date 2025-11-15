@@ -15,7 +15,7 @@ import type { Token, TransactionNotification } from "../types";
 
 export const DCAOrdersPage: React.FC = () => {
 	const { coins, coinsLoading, coinsError } = useShariaCompliance();
-	const { address, isConnected, isOnMoonbaseAlpha } = useWallet();
+	const { address, isConnected } = useWallet();
 	
 	// DCA hooks
 	const {
